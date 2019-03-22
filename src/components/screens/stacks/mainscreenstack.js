@@ -3,7 +3,6 @@ import React from 'react';
 import { StyleSheet, Text, View, StatusBar, AsyncStorage } from 'react-native';
 import { createStackNavigator } from 'react-navigation';
 import { createMaterialBottomTabNavigator } from 'react-navigation-material-bottom-tabs';
-import ShopScreen from '../shop/shop';
 import CreateShopScreen from '../user/createshop';
 import ExploreScreen from '../user/explore';
 import LatestScreen from '../user/latest';
@@ -73,12 +72,6 @@ const ProfileStack = createStackNavigator({
   },
   TermAndCondition: {
     screen: TermAndConditionScreen,
-    navigationOptions: {
-      header: null
-    }
-  },
-  ShopSetting: {
-    screen: ShopScreen,
     navigationOptions: {
       header: null
     }

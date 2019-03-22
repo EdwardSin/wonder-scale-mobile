@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "jsx": "preserve",
+        "target": "es6",
+        "module": "commonjs",
+        "baseUrl": "./",
+        "lib": [
+            "dom",
+            "es6",
+            "es7"
+        ],
+    },
+    "exclude": [
+        "node_modules/*"
+    ]
+}
