@@ -5,3 +5,8 @@ npm-debug.*
 *.p12
 *.key
 *.mobileprovision
+trash
+.vscode
+apidoc
+script.js
+

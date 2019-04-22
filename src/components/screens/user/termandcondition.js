@@ -17,27 +17,16 @@ export default class TermAndConditionScreen extends React.Component {
         try {
             const path = MyPath + "/term_and_condition.txt";
             const contents = await FileSystem.readFile(path);
-            
             return ("" + contents);
         } catch (e) {
             alert("" + e);
             return;
         }
     }
-    //   readFile = async (MyPath) => {
-    //     try {
-    //       const path = MyPath + "/term_and_condition.txt";
-    //       const contents = await RNFS.readFile(path, "utf8");
-    //       return("" + contents);
-    //     } catch (e) {
-    //       alert("" + e);
-    //     }
-    //   };
-
     render() {
         return (
             <View style={styles.container}>
-                <Text style={{ flexWrap: 'wrap' }}>{this.getTermAndCondition('../../assets/uploads')}</Text>
+                <Text style={styles.text}>{this.getTermAndCondition('../../assets/uploads')}</Text>
             </View>
         );
     }
@@ -49,5 +38,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.white,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    text: {
+        flexWrap: 'wrap'
     }
 });

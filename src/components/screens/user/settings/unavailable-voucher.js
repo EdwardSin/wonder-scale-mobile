@@ -1,16 +1,12 @@
+import * as VoucherAction from 'actions/voucher-reducer.action';
 import colors from 'assets/variables/colors';
-import { LoadingSpinner, WsItem, WsRefreshControl, EmptyList, WsVoucherCard, WsSearchbar } from 'components/modals/ws-modals';
-import environments from 'environments/environment';
-import { Constants } from 'expo';
-import React from 'react';
+import { EmptyList, LoadingSpinner, WsRefreshControl, WsSearchbar, WsVoucherCard } from 'components/modals/ws-modals';
 import * as _ from 'lodash';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
-import { createMaterialTopTabNavigator } from 'react-navigation';
-import { MaterialTopTabBar } from 'react-navigation-tabs';
+import React from 'react';
+import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { onVoucherRefreshed } from 'actions/voucher-reducer-action';
-import { getUserAvailableClaimedVouchers, getUserUnavailableClaimedVouchers } from 'services/auth/voucher';
+import { getUserUnavailableClaimedVouchers } from 'services/auth-user/voucher';
 
 const { width } = Dimensions.get('window');
 
@@ -53,16 +49,11 @@ class UsedClaimedVoucherScreen extends React.Component {
                 <FlatList data={this.state.searchVouchers}
                     keyExtractor={(item, index) => item['_id']}
                     ListEmptyComponent={<EmptyList message={"No claimed voucher found!"} />}
-                    renderItem={({ item }) => {
-                        return (
-                            <View style={{ width: '100%', padding: 10 }}>
-                                <WsVoucherCard navigation={this.props.navigation} item={item}>{item.promotion.title}</WsVoucherCard>
-                            </View>
-                        )
-                    }}
-                    refreshControl={<WsRefreshControl refreshing={this.state.refreshing}
-                        onRefresh={this.handleRefresh.bind(this)} />
-                    } />
+                    refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh} />} 
+                    renderItem={({ item }) => (
+                        <View style={{ width: '100%', padding: 10 }}>
+                            <WsVoucherCard navigation={this.props.navigation} item={item}>{item.promotion.title}</WsVoucherCard>
+                        </View>)}/>
             </View>
         );
     }
@@ -106,7 +97,7 @@ const mapStateToProps = state => {
 }
 
 const mapDispatchToProps = dispatch => {
-    return bindActionCreators({ onVoucherRefreshed }, dispatch);
+    return bindActionCreators({ ...VoucherAction }, dispatch);
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(UsedClaimedVoucherScreen);
@@ -115,15 +106,5 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         paddingHorizontal: 10
-    },
-    description: {
-        marginTop: 5,
-        marginBottom: 5
-    },
-    card: {
-        backgroundColor: '#f7f7f7'
-    },
-    updateAt: {
-        color: '#888'
     }
 });

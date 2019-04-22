@@ -1,6 +1,8 @@
+import colors from 'assets/variables/colors';
 import React from 'react';
 import { ActivityIndicator, Dimensions, Modal, StyleSheet, Text, View } from 'react-native';
 
+const { height, width } = Dimensions.get('window');
 export default class LoadingScreen extends React.Component {
 
     constructor(props) {
@@ -21,7 +23,6 @@ export default class LoadingScreen extends React.Component {
     }
 }
 
-const { height, width } = Dimensions.get('window');
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
@@ -31,7 +32,7 @@ const styles = StyleSheet.create({
     innerContainer: {
         height: 120,
         width: 240,
-        backgroundColor: "#ffffff",
+        backgroundColor: colors.white,
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: "row",

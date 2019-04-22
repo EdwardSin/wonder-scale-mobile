@@ -1,6 +1,6 @@
+import { AuthUserURL, UserURL } from "db/url";
 import { AsyncStorage } from "react-native";
-import environments from "../environments/environment";
-import { http, headers } from "./http";
+import { headers, http } from "./http";
 
 export const WS_Token = "ws-token";
 
@@ -8,17 +8,17 @@ export const createAuthenticationHeaders = async () => {
   let headers = { 'Content-Type': 'application/json', authorization: await AsyncStorage.getItem(WS_Token) || '' }
   return headers;
 }
-export const onSignInWithoutActivated = (email, password, callback) => {
-  return http.post(environments.URL + '/api/users/loginwithoutactivated', { email: email, password: password }, headers, callback);
+export const onSignInWithoutActivated = (email, password, callback, errorCallback) => {
+  return http.post(UserURL.onSignInWithoutActivatedUrl, { email: email, password: password }, headers, callback, errorCallback);
 }
 
-export const onSignIn = (email, password, callback) => {
-  return http.post(environments.URL + '/api/users/login', { email: email, password: password }, headers, callback);
+export const onSignIn = (email, password, callback, errorCallback) => {
+  return http.post(UserURL.loginUrl, { email: email, password: password }, headers, callback, errorCallback);
 };
 
 export const onSignOut = () => {
   return new Promise((resolve, reject) => {
-    http.post(environments.URL + '/api/auth-users/logout', {}, headers, (result) => {
+    http.post(AuthUserURL.logoutUrl, {}, headers, (result) => {
       AsyncStorage.removeItem(WS_Token);  
       if (!result['loggedIn']) {
         resolve(true);

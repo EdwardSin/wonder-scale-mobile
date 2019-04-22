@@ -1,26 +1,21 @@
 import colors from 'assets/variables/colors';
-import { LoadingSpinner } from 'components/modals/ws-modals';
+import { EmptyList, LoadingSpinner } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
 import React from 'react';
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import Image from 'react-native-scalable-image';
+import { connect } from 'react-redux';
 import { getShopWithNewItems } from 'services/shops';
-;
 
-let ImageArray = ({ images }) => (images.map((image, index) =>
-    
-    <View key={index} style={{ padding: 15, paddingBottom: 0 }}>
-        <Image width={Dimensions.get('window').width - 30} style={styles.image} source={{ uri: environments.IMAGE_URL + image }} />
-    </View>
-))
+const { width } = Dimensions.get('window');
 
-export default class InfoScreen extends React.Component {
+class InfoScreen extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
             loading: true,
             shop: {},
-            shopId: environments.shop_id//this.props.navigation.state.params.shopId;
+            shop_id: this.props.shop_id
         }
     }
 
@@ -29,38 +24,47 @@ export default class InfoScreen extends React.Component {
     }
 
     getShop = () => {
-        
         this.setState({ loading: true });
-        getShopWithNewItems(this.state.shopId, (result) => {
+        getShopWithNewItems(this.state.shop_id, (result) => {
             this.setState({ shop: result, loading: false });
         })
     }
-
-
     render() {
         return (
             this.state.loading ? <LoadingSpinner /> :
                 (<View style={styles.container}>
                     <ScrollView style={{ flex: 1 }}>
-                        <ImageArray images={this.state.shop.information_images} />
+                        {this.state.shop.information_images && this.state.shop.information_images.length > 0 ?
+                            <ImageArray images={this.state.shop.information_images} />
+                            : <EmptyList message={'No information banner displayed!'} />
+                        }
                     </ScrollView>
                 </View>)
         );
     }
-    navigateToSearchItemBar = () => {
-        this.props.navigation.navigate('AllItems');
+}
+
+let ImageArray = ({ images }) => (images.map((image, index) =>
+    <View key={index} style={{ padding: 15, paddingBottom: 0 }}>
+        <Image width={width - 30} style={styles.image} source={{ uri: environments.IMAGE_URL + image }} />
+    </View>
+))
+
+const mapStateToProps = state => {
+    return {
+        shop_id: state.shopReducer.shop_id
     }
 }
+
+export default connect(mapStateToProps)(InfoScreen);
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.lightenGrey
+        backgroundColor: colors.greyLighten5
     },
     image: {
         resizeMode: 'stretch',
-        // width: undefined,
-        // height: undefined,
-        width: '100%',
         borderRadius: 5
     }
 });

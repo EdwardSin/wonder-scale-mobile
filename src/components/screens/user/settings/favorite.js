@@ -1,12 +1,11 @@
 import colors from 'assets/variables/colors';
-import { LoadingSpinner, WsItem, WsRefreshControl, EmptyList } from 'components/modals/ws-modals';
+import { EmptyList, LoadingSpinner, WsItem, WsRefreshControl } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
-import { Constants } from 'expo';
 import React from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { createMaterialTopTabNavigator } from 'react-navigation';
 import { MaterialTopTabBar } from 'react-navigation-tabs';
-import { getFollowItems, getFollowShops } from 'services/auth/follow';
+import { getFollowItems, getFollowShops } from 'services/auth-user/follow';
 
 let ShopCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.card}>
@@ -16,9 +15,7 @@ let ShopCard = ({ item, onPress }) => (
           style={{ height: 200, flex: 1 }}
           source={{ uri: environments.IMAGE_URL + item.profile_image }} />
       </View>
-      <View style={{
-        padding: 10
-      }}>
+      <View style={{ padding: 10 }}>
         <Text style={{ fontSize: 18 }}>{item.name}</Text>
         {false && item.description && item.description.length > 150 ?
           <Text style={styles.description}>{item.description.slice(0, 150)}...</Text>
@@ -37,13 +34,13 @@ class FavoriteShopScreen extends React.Component {
     super(props);
     this.state = {
       loading: true,
-      refreshing: false
+      refreshing: false,
+      shops: []
     }
   }
   componentDidMount() {
     this.getFollowShops();
   }
-
   getFollowShops = () => {
     this.setState({ loading: true });
     getFollowShops((result) => {
@@ -66,7 +63,7 @@ class FavoriteShopScreen extends React.Component {
               <ShopCard onPress={() => this.navigateToShop(item['_id'])} item={item} />)
           </View>)}
           refreshControl={<WsRefreshControl refreshing={this.state.refreshing}
-            onRefresh={this.handleRefresh.bind(this)} />
+            onRefresh={this.handleRefresh} />
           } />
       </View>
     );
@@ -80,7 +77,7 @@ class FavoriteShopScreen extends React.Component {
     })
   }
   navigateToShop = (shopId) => {
-    this.props.navigation.navigate("PublicShop", { shopId: shopId });
+    this.props.navigation.navigate("PublicShop", { shopId });
   }
 }
 
@@ -89,7 +86,8 @@ class FavoriteItemScreen extends React.Component {
     super(props);
     this.state = {
       loading: true,
-      refreshing: false
+      refreshing: false,
+      items: []
     }
   }
 
@@ -118,7 +116,7 @@ class FavoriteItemScreen extends React.Component {
           renderItem={({ item }) => (<View style={{ width: '50%' }}>
             <WsItem navigation={this.props.navigation} showFollow={true} showSeller={true} item={item}></WsItem>
           </View>)}
-          refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh.bind(this)} /> } />
+          refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh} /> } />
       </View>
     );
   }
@@ -140,10 +138,10 @@ export default createMaterialTopTabNavigator({
     initialRouteName: 'Shop',
     tabBarOptions: {
       activeTintColor: colors.black,
-      pressColor: "gray",
+      pressColor: colors.grey,
       inactiveTintColor: colors.black,
       style: {
-        backgroundColor: '#f7f7f7',
+        backgroundColor: colors.greyLighten5,
       },
       indicatorStyle: {
         backgroundColor: colors.secondary,
@@ -160,7 +158,7 @@ function MaterialTopTabBarWithStatusBar(props) {
   return (
     <View
       style={{
-        backgroundColor: '#f7f7f7',
+        backgroundColor: colors.greyLighten5,
       }}
     >
       <MaterialTopTabBar {...props} jumpToIndex={() => { }} />
@@ -172,11 +170,10 @@ const styles = StyleSheet.create({
     flex: 1
   },
   description: {
-    marginTop: 5,
-    marginBottom: 5
+    marginVertical: 5
   },
   card: {
-    backgroundColor: '#f7f7f7'
+    backgroundColor: colors.greyLighten5
   },
   updateAt: {
     color: '#888',

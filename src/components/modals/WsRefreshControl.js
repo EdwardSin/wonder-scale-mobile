@@ -19,7 +19,6 @@ export default class WsRefreshControl extends React.Component {
         refreshing={refreshing}
         onRefresh={onRefresh}
         title="Pull to refresh"
-        // backgroundColor={colors.lightenGrey}
         titleColor={colors.grey}
       />
     );

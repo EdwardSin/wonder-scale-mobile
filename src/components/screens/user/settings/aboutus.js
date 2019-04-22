@@ -4,18 +4,13 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default class AboutusScreen extends React.Component {
-
     constructor(props) {
         super(props);
     }
-
-    componentDidMount() {
-    }
-
     render() {
         return (<View style={styles.container}>
-            <ScrollView>
-                <Title>About Us</Title>
+            <Title style={{ paddingHorizontal: 20}}>About Us</Title>
+            <ScrollView style={{paddingHorizontal: 20}}>
                 <Text style={{ fontSize: 18, color: colors.greyDarken1 }}>Still waiting customers walk in to you shop?{'\n\n'}
                 Why not promote your selling point to your customers? {'\n\n'}
                 We provide a place for you to manage your business. {'\n\n'}
@@ -25,14 +20,11 @@ export default class AboutusScreen extends React.Component {
             </ScrollView>
         </View>);
     }
-
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingLeft: 20,
-        paddingRight: 20,
         backgroundColor: colors.white
     }
 });

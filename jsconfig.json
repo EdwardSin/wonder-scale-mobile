@@ -4,7 +4,13 @@
         "jsx": "preserve",
         "target": "es6",
         "module": "commonjs",
-        "baseUrl": "./",
+        "baseUrl": "./src",
+        "paths": {
+            "components/*": ["components/*"],
+            "services/*": ["services/*"],
+            "assets/*": ["assets/*"],
+            "actions/*": ["actions/*"]
+        },
         "lib": [
             "dom",
             "es6",

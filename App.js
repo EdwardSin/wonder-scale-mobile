@@ -1,43 +1,49 @@
 import { createAppContainer } from '@react-navigation/native';
 import colors from 'assets/variables/colors';
-import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
-import { HeaderBackButton, createStackNavigator } from 'react-navigation';
-import ForgotPasswordScreen from 'components/screens/authentication/forgotpassword';
-import LoginScreen from 'components/screens/authentication/login';
-import SignUpScreen from 'components/screens/authentication/signup';
+import FilterModal from 'components/modals/search/FilterModal';
+import { WsToast } from 'components/modals/ws-modals';
 import ItemdetailScreen from 'components/screens/public/itemdetail';
+import PromotionDetailScreen from 'components/screens/public/promotiondetail';
+import RecruitmentDetailScreen from 'components/screens/public/recruitmentdetail';
+import ShopAllItemsScreen from 'components/screens/public/shop/allitems';
 import CategoryItemsScreen from 'components/screens/public/shop/categoryitems';
+import ShopDiscountItemsScreen from 'components/screens/public/shop/discountitems';
 import InfoScreen from 'components/screens/public/shop/info';
-import PublicShopReviewScreen from 'components/screens/public/shop/reviews';
-import PublicShopStack from 'components/screens/stacks/publicshopstack';
+import ItemsDisplayScreen from 'components/screens/public/shop/itemsdisplay';
+import MapModal from 'components/screens/public/shop/mapmodal';
+import ShopNewItemsScreen from 'components/screens/public/shop/newitems';
+import ShopQRCodeScreen from 'components/screens/public/shop/qrcode';
+import RecruitmentMapModalScreen from 'components/screens/public/shop/recruitment-mapmodal';
 import MainScreenStack from 'components/screens/stacks/mainscreenstack';
+import PublicShopStack from 'components/screens/stacks/publicshopstack';
+import ForgotPasswordScreen from 'components/screens/user/authentication/forgotpassword';
+import LoginScreen from 'components/screens/user/authentication/login';
+import SignUpScreen from 'components/screens/user/authentication/signup';
+import ReportReviewScreen from 'components/screens/user/report-review.screen';
 import AboutusScreen from 'components/screens/user/settings/aboutus';
 import CurrencyScreen from 'components/screens/user/settings/currency';
 import EditProfileScreen from 'components/screens/user/settings/editprofile';
+import FavoriteScreen from 'components/screens/user/settings/favorite';
 import FeedbackScreen from 'components/screens/user/settings/feedback';
 import PolicyScreen from 'components/screens/user/settings/policy';
+import RedeemScreen from 'components/screens/user/settings/redeem';
 import SecurityScreen from 'components/screens/user/settings/security';
 import SettingsScreen from 'components/screens/user/settings/settings';
-import FavoriteScreen from 'components/screens/user/settings/favorite';
 import VourchersScreen from 'components/screens/user/settings/voucher';
-import RedeemScreen from 'components/screens/user/settings/redeem';
-import MapModal from 'components/screens/public/shop/mapmodal';
-import FilterModal from 'components/modals/search/FilterModal';
-import { isSignedIn } from 'services/auth';
-import { Font } from 'expo';
-import { Provider } from 'react-redux';
-import { createStore } from 'redux';
-import allReducers from 'reducers/index';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { HeaderBackButton, createStackNavigator } from 'react-navigation';
 import StackViewStyleInterpolator from 'react-navigation-stack/src/views/StackView/StackViewStyleInterpolator';
+import { Provider } from 'react-redux';
+import allReducers from 'reducers/index';
+import { createStore } from 'redux';
+import { isSignedIn } from 'services/auth';
 
 let navigationOptions = { header: null };
 let navigationOptionsWithBack = {
-  //title: 'Back',
   headerTintColor: colors.secondary,
   headerLeftContainerStyle: {
-    paddingBottom: 10,
-    paddingTop: 10,
+    paddingVertical: 10,
     paddingLeft: 10
   },
 };
@@ -80,17 +86,53 @@ const createNavigator = () => {
         title: 'Forgot Password'
       })
     },
+    AllItems: {
+      screen: ShopAllItemsScreen,
+      navigationOptions: navigationOptions
+    },
+    NewItems: {
+      screen: ShopNewItemsScreen,
+      navigationOptions: navigationOptions
+    },
+    DiscountItems: {
+      screen: ShopDiscountItemsScreen,
+      navigationOptions: navigationOptions
+    },
     ItemDetail: {
       screen: ItemdetailScreen,
+      navigationOptions: navigationOptions
+    },
+    ItemsDisplay: {
+      screen: ItemsDisplayScreen,
+      navigationOptions: navigationOptions
+    },
+    RecruitmentDetail: {
+      screen: RecruitmentDetailScreen,
+      navigationOptions: navigationOptions
+    },
+    PromotionDetail: {
+      screen: PromotionDetailScreen,
+      navigationOptions: navigationOptions
+    },
+    QRCode: {
+      screen: ShopQRCodeScreen,
       navigationOptions: navigationOptions
     },
     PublicShop: {
       screen: PublicShopStack,
       navigationOptions: navigationOptions
     },
+    ReportReview: {
+      screen: ReportReviewScreen,
+      navigationOptions: navigationOptionsWithBack
+    },
     MapModal: {
       screen: MapModal,
-      navigationOptions: { ...navigationOptions }
+      navigationOptions: navigationOptions
+    },
+    RecruitmentMapModal: {
+      screen: RecruitmentMapModalScreen,
+      navigationOptions: navigationOptions
     },
     FilterModal: {
       screen: FilterModal,
@@ -106,14 +148,12 @@ const createNavigator = () => {
     },
     Info: {
       screen: InfoScreen,
-      navigationOptions: Object.assign({}, navigationOptionsWithBack, {
-        title: 'Information'
-      })
+      navigationOptions: { ...navigationOptionsWithBack, title: 'Information' }
     },
-    PublicShopReview: {
-      screen: PublicShopReviewScreen,
-      navigationOptions: navigationOptions
-    },
+    // PublicShopReview: {
+    //   screen: PublicShopReview,
+    //   navigationOptions: navigationOptions
+    // },
     CategoryItems: {
       screen: CategoryItemsScreen,
       navigationOptions: navigationOptions
@@ -126,8 +166,7 @@ const createNavigator = () => {
           title: null,
           headerTintColor: colors.secondary,
           headerLeftContainerStyle: {
-            paddingBottom: 10,
-            paddingTop: 10,
+            paddingVertical: 10,
             paddingLeft: 10
           },
           headerRightContainerStyle: {
@@ -137,12 +176,10 @@ const createNavigator = () => {
             style={{ color: colors.secondary, fontSize: 18 }}>Save</Text></View></TouchableOpacity>)
         }
       }
-    },   
+    },
     Vouchers: {
       screen: VourchersScreen,
-      navigationOptions:  Object.assign({}, navigationOptionsWithBack, {
-        title: 'Vouchers'
-      })
+      navigationOptions: {...navigationOptionsWithBack, title: 'Vouchers'}
     },
     Redeem: {
       screen: RedeemScreen,
@@ -150,9 +187,7 @@ const createNavigator = () => {
     },
     Favorites: {
       screen: FavoriteScreen,
-      navigationOptions:  Object.assign({}, navigationOptionsWithBack, {
-        title: 'Favorites'
-      })
+      navigationOptions: {...navigationOptionsWithBack, title: 'Favorites'}
     },
     Settings: {
       screen: SettingsScreen,
@@ -170,8 +205,7 @@ const createNavigator = () => {
           title: null,
           headerTintColor: colors.secondary,
           headerLeftContainerStyle: {
-            paddingBottom: 10,
-            paddingTop: 10,
+            paddingVertical: 10,
             paddingLeft: 10
           },
           headerRightContainerStyle: {
@@ -193,8 +227,7 @@ const createNavigator = () => {
           title: null,
           headerTintColor: colors.secondary,
           headerLeftContainerStyle: {
-            paddingBottom: 10,
-            paddingTop: 10,
+            paddingVertical: 10,
             paddingLeft: 10
           },
           headerRightContainerStyle: {
@@ -213,8 +246,7 @@ const createNavigator = () => {
           title: null,
           headerTintColor: colors.secondary,
           headerLeftContainerStyle: {
-            paddingBottom: 10,
-            paddingTop: 10,
+            paddingVertical: 10,
             paddingLeft: 10
           },
           headerRightContainerStyle: {
@@ -233,26 +265,34 @@ const createNavigator = () => {
     },
   }, {
       initialRouteName: 'Main',
-      mode: 'card',
+      headerMode: 'screen',
       transitionConfig: (transitionProps, prevTransitionProps, isModal) => ({
         screenInterpolator: (props) => {
-          // Basically you need to create a condition for individual scenes
-          if (props.scene.route.routeName === 'MapModal') {
+          const { scene, scenes } = props;
+          const { route } = scenes[scenes.length - 1];
+          const params = route.params || {};
+          const transition = params.transition || 'forHorizontal';
+          return StackViewStyleInterpolator[transition](props);
+          //Basically you need to create a condition for individual scenes
 
-            // forVertical makes the scene transition for Top to Bottom
-            return StackViewStyleInterpolator.forVertical(props);
-          }
+          
+          // if (props.scene.route.routeName === 'MapModal') {
 
-          const last = props.scenes[props.scenes.length - 1];
+          //   // forVertical makes the scene transition for Top to Bottom
+          //   return StackViewStyleInterpolator.forVertical(props);
+          // }
 
-          // This controls the transition when navigation back toa specific scene
-          if (last.route.routeName === 'MapModal' || last.route.routeName === 'FilterModal') {
+          // const last = props.scenes[props.scenes.length - 1];
 
-            // Here, forVertical flows from Top to Bottom
-            return StackViewStyleInterpolator.forVertical(props);
-          }
+          // //This controls the transition when navigation back toa specific scene
 
-          return StackViewStyleInterpolator.forHorizontal(props);
+          // if (last.route.routeName === 'MapModal' || last.route.routeName === 'FilterModal') {
+
+          //   // Here, forVertical flows from Top to Bottom
+          //   return StackViewStyleInterpolator.forVertical(props);
+          // }
+
+          // return StackViewStyleInterpolator.forHorizontal(props);
         }
       })
     });
@@ -280,6 +320,7 @@ export default class App extends React.Component {
     const App = createAppContainer(RootStack);
     return <Provider store={store}>
       <App navigation={navigation} />
+      <WsToast />
     </Provider>;
   }
 }

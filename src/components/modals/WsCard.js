@@ -1,10 +1,15 @@
+import * as ToastAction from 'actions/toast-reducer.action';
+import colors from 'assets/variables/colors';
+import PropTypes from 'prop-types';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import environments from '../../environments/environment';
 
 const { width } = Dimensions.get('window');
 
-export default class WsCard extends React.Component {
+class WsCard extends React.Component {
     
     renderShopProfile = () => (
         <TouchableOpacity>
@@ -26,11 +31,30 @@ export default class WsCard extends React.Component {
     }
 }
 
+
+const mapStateToProps = state => {
+    return { };
+  }
+  
+  const mapDispatchToProps = dispatch => {
+    return bindActionCreators({ ...ToastAction }, dispatch);
+  }
+  export default connect(mapStateToProps, mapDispatchToProps)(WsCard);
+
+
 const styles = StyleSheet.create({
     card: {
         padding: 10,
-        backgroundColor: '#f7f7f7',
+        backgroundColor: colors.greyLighten5,
         marginBottom: 10,
         width: width
     }
 });
+
+WsCard.defaultProps = {
+
+}
+
+WsCard.propsTypes = {
+    navigation: PropTypes.func
+}

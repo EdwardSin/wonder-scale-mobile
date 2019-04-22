@@ -58,16 +58,14 @@ const styles = StyleSheet.create({
   },
   datePicker: {
     width: '100%',
-    paddingLeft: '10%',
-    paddingRight: '10%',
+    paddingHorizontal: '10%',
     borderBottomWidth:1,
     borderColor: colors.greyLighten2
   },
   errorText: {
     color: colors.primary,
     width: '100%',
-    paddingLeft: '10%',
-    paddingRight: '10%',
+    paddingHorizontal: '10%',
     textAlign: 'right'
   }
 });

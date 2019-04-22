@@ -1,13 +1,15 @@
+import * as ToastAction from 'actions/toast-reducer.action';
 import colors from 'assets/variables/colors';
 import countries from 'assets/variables/countries';
-import { BottomButton, LoadingScreen, Title, WsPicker, WsTextInput } from 'components/modals/ws-modals';
+import { LoadingScreen, Title, WsPicker, WsTextInput } from 'components/modals/ws-modals';
 import React from 'react';
-import { StyleSheet, View, KeyboardAvoidingView } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { sendEmail } from 'services/feature';
 
-
-export default class FeedbackScreen extends React.Component {
+class FeedbackScreen extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -17,15 +19,9 @@ export default class FeedbackScreen extends React.Component {
             tel: '',
             country: '',
             comment: '',
-            nameError: '',
-            emailError: '',
-            telError: '',
-            countryError: '',
-            commentError: '',
             items: []
         };
     }
-
     componentDidMount() {
         let items = [{ label: 'Select Country', value: '' }];
         this.props.navigation.setParams({ onPressSubmit: this.onPressSubmit });
@@ -34,40 +30,35 @@ export default class FeedbackScreen extends React.Component {
         }
         this.setState({ items: items });
     }
-
     render() {
         return (
             <View style={styles.container} >
                 <LoadingScreen loading={this.state.loading} title={'Loading...'} onRequestClose={this.onRequestClose} />
-                <View style={{ padding: 20}}>
-                    <Title>Give us feedback</Title>
-                </View>
+                <Title style={{ paddingHorizontal: 20}}>Give us feedback</Title>
                 <KeyboardAwareScrollView  style={{flex: 1, paddingHorizontal: 20}} extraHeight={75} >
-                    <WsTextInput title={''} textInput={{ value: this.state.name, onChangeText: this.onNameChanged, placeholder: 'Enter your name' }} errorText={this.state.nameError} />
-                    <WsTextInput title={''} textInput={{ value: this.state.email, onChangeText: this.onEmailChanged, keyboardType: 'email-address', placeholder: 'Enter your email' }} errorText={this.state.emailError} />
-                    <WsTextInput title={''} textInput={{ value: this.state.tel, onChangeText: this.onTelChanged, placeholder: 'Enter your tel' }} errorText={this.state.telError} />
-                    <WsPicker label={'Select Country'} onValueChange={ this.onCountryChanged} value={this.state.country} items={this.state.items} errorText={this.state.countryError} />
-                    <WsTextInput title={''} textInput={{ value: this.state.comment, onChangeText: this.onCommentChanged, multiline: true, placeholder: 'Enter your comment' }} errorText={this.state.commentError} />
+                    <WsTextInput title={''} textInput={{ value: this.state.name, onChangeText: this.onNameChanged, placeholder: 'Enter your name' }} />
+                    <WsTextInput title={''} textInput={{ value: this.state.email, onChangeText: this.onEmailChanged, keyboardType: 'email-address', placeholder: 'Enter your email' }} />
+                    <WsTextInput title={''} textInput={{ value: this.state.tel, onChangeText: this.onTelChanged, placeholder: 'Enter your tel' }} />
+                    <WsPicker label={'Select Country'} onValueChange={ this.onCountryChanged} value={this.state.country} items={this.state.items} />
+                    <WsTextInput title={''} textInput={{ value: this.state.comment, onChangeText: this.onCommentChanged, multiline: true, placeholder: 'Enter your comment' }} />
                 </KeyboardAwareScrollView>
-                
-                <BottomButton>Submit</BottomButton>
             </View>);
     }
 
     onNameChanged = (name) => {
-        this.setState({ name: name, nameError: '' });
+        this.setState({ name });
     }
     onEmailChanged = (email) => {
-        this.setState({ email: email, emailError: '' });
+        this.setState({ email });
     }
     onTelChanged = (tel) => {
-        this.setState({ tel: tel, telError: '' });
+        this.setState({ tel });
     }
     onCountryChanged = (country) => {
-        this.setState({ country: country, countryError: '' });
+        this.setState({ country });
     }
     onCommentChanged = (comment) => {
-        this.setState({ comment: comment, commentError: '' });
+        this.setState({ comment });
     }
     onPressSubmit = () => {
         let obj = {
@@ -82,31 +73,24 @@ export default class FeedbackScreen extends React.Component {
             sendEmail(obj, (result) => {
                 this.setState({callbackMessage: result['message']});
                 if(result['success']){
-                    this.setState({
-                        name: '',
-                        email: '',
-                        tel: '',
-                        country: '',
-                        comment: '',
-                        nameError: '',
-                        emailError: '',
-                        telError: '',
-                        countryError: '',
-                        commentError: '',
-                    })
+                    this.resetForm();
                     this.props.navigation.goBack(null);
-                    // const resetActions = StackActions.back({
-                    //     index: 0,
-                    //     key: null,
-                    //     actions: [
-                    //       NavigationActions.navigate({ routeName: 'Main' })
-                    //     ],
-                    //   });
-                    //   this.props.navigation.dispatch(resetActions);
                 }
                 this.setState({loading: false});
             })
         }
+        else{
+            this.setState({loading: false});
+        }
+    }
+    resetForm = () =>{
+        this.setState({
+            name: '',
+            email: '',
+            tel: '',
+            country: '',
+            comment: ''
+        })
     }
     onRequestClose = () => {
         if (this.state.callbackMessage && this.state.callbackMessage != '') {
@@ -117,32 +101,46 @@ export default class FeedbackScreen extends React.Component {
 
     isValidated(obj) {
         if (obj.name.trim() === '') {
-            this.setState({ nameError: 'Name is required!' });
+            this.props.onToast('Name is required!');
             return false;
         }
         else if (obj.email.trim() === '') {
-            this.setState({ emailError: 'Email is required!' });
+            this.props.onToast('Email is required!');
             return false;
         }
         else if (obj.tel.trim() === '') {
-            this.setState({ telError: 'Tel is required!' });
+            this.props.onToast('Tel is required!');
             return false;
         }
         else if (obj.country === 'Select Country') {
-            this.setState({ countryError: 'Country is required!' });
+            this.props.onToast('Country is required!');
             return false;
         }
         else if (obj.comment === '') {
-            this.setState({ commentError: 'Comment is required!' });
+            this.props.onToast('Comment is required!');
             return false;
         }
         else if (obj.comment.length < 15) {
-            this.setState({ commentError: 'At least 15 characters is required!' });
+            this.props.onToast('At least 15 characters is required!');
             return false;
         }
         return true;
     }
 }
+
+
+const mapStateToProps = state => {
+    return {
+        
+    }
+}
+
+const mapDispatchToProps = dispatch => {
+    return bindActionCreators({ ...ToastAction }, dispatch);
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(FeedbackScreen);
+
 
 const styles = StyleSheet.create({
     container: {

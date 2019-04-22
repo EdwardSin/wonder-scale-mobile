@@ -16,14 +16,12 @@ export default class WsSlashText extends React.Component {
 const styles = StyleSheet.create({
   container:{
     width: '100%',
-    paddingLeft: '10%',
-    paddingRight:  '10%',
+    paddingHorizontal: '10%',
     justifyContent:'center',
     alignItems:'center'
   },
   textStyle: {
-    paddingLeft: 5,
-    paddingRight: 5,
+    paddingHorizontal: 5,
     color: colors.black,
     backgroundColor: colors.greyLighten5
   },

@@ -1,15 +1,15 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import * as VoucherAction from 'actions/voucher-reducer.action';
 import { LoadingSpinner, WsButton, WsStatusBar, WsTextInput } from 'components/modals/ws-modals';
 import * as _ from 'lodash';
 import moment from 'moment';
 import React from 'react';
 import { Dimensions, Image, KeyboardAvoidingView, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { getVoucherWithPromotion, redeemVoucher } from 'services/auth/voucher';
-import colors from './../../../../assets/variables/colors';
+import { ActivityIndicator } from 'react-native-paper';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { onVoucherRedeemed } from 'actions/voucher-reducer-action';
-import { ActivityIndicator } from 'react-native-paper';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { getVoucherWithPromotion, redeemVoucher } from 'services/auth-user/voucher';
+import colors from './../../../../assets/variables/colors';
 const { width, height } = Dimensions.get('window');
 
 class VourchersScreen extends React.Component {
@@ -58,7 +58,7 @@ class VourchersScreen extends React.Component {
                     {this.state.item.promotion && this.state.item.promotion.is_term_and_condition && <Text style={{ color: '#0000FF' }} onPress={() => { this.setState({ termAndConditionModalVisible: true }) }}>Term and Condition</Text>}
                     <View style={{ marginBottom: 20 }}></View>
                     {this.state.item.valid &&
-                        <TouchableOpacity style={[styles.claimButton, { backgroundColor: '#282C35' }]} onPress={() => { this.onRedeemModalPressed(this.state.item._id) }}>
+                        <TouchableOpacity style={[styles.claimButton, { backgroundColor: '#282C35' }]} onPress={() => { this.onRedeemModalPressed() }}>
                             <Text style={styles.claimText}>{'Redeem'}</Text>
                         </TouchableOpacity>}
                     <WsButton backgroundColor={'red'} style={{ marginBottom: 10 }} onPress={() => { this.props.navigation.goBack() }}>Cancel</WsButton>
@@ -107,7 +107,6 @@ class VourchersScreen extends React.Component {
         this.setState({
             refreshing: true
         }, () => {
-            this.getUserClaimedVouchers();
         })
     }
     navigateToShop = (shopId) => {
@@ -165,7 +164,7 @@ const mapStateToProps = state => {
 }
 
 const mapDispatchToProps = dispatch => {
-    return bindActionCreators({ onVoucherRedeemed }, dispatch);
+    return bindActionCreators({ ...VoucherAction }, dispatch);
 }
 export default connect(mapStateToProps, mapDispatchToProps)(VourchersScreen);
 
@@ -175,11 +174,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10
     },
     description: {
-        marginTop: 5,
-        marginBottom: 5
+        marginVertical: 5
     },
     card: {
-        backgroundColor: '#f7f7f7'
+        backgroundColor: colors.greyLighten5
     },
     updateAt: {
         color: '#888'
@@ -196,7 +194,7 @@ const styles = StyleSheet.create({
         marginBottom: 10
     },
     claimText: {
-        color: '#fff',
+        color: colors.white,
         fontSize: 20,
         textAlign: 'center'
     }

@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import colors from 'assets/variables/colors';
-import { Title, WsStatusBar } from 'components/modals/ws-modals';
+import { Title } from 'components/modals/ws-modals';
 import React from 'react';
-import { AsyncStorage, ScrollView, StyleSheet, View, StatusBar, Platform } from 'react-native';
+import { AsyncStorage, ScrollView, StyleSheet, View } from 'react-native';
 import { ListItem } from 'react-native-elements';
 import { NavigationActions, StackActions } from 'react-navigation';
 import { onSignOut } from 'services/auth';
@@ -13,7 +13,6 @@ export default class SettingsScreen extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            loading: false,
             list: [],
             selectedCurrency: ''
         };
@@ -22,7 +21,6 @@ export default class SettingsScreen extends React.Component {
         this.getCurrency();
     }
     getCurrency = () => {
-        
         AsyncStorage.getItem(WS_Currency)
             .then(res => {
                 if (res) {
@@ -53,14 +51,12 @@ export default class SettingsScreen extends React.Component {
 
     render() {
         return (<View style={styles.container}>
-            <ScrollView>
-                <View style={{paddingLeft: 20, paddingRight: 20}}>
-                    <Title>Settings</Title>
-                </View>
+            <Title style={{ paddingHorizontal: 20}}>Settings</Title>
+            <ScrollView>    
                 {this.state.list.map((item, index) =>
-                    (<ListItem key={index} title={item.name} rightIcon={<Ionicons name={item.icon.name} color={colors.greyDarken2} size={35} />}
-                        containerStyle={{paddingHorizontal: 40, paddingVertical: 15, borderBottomColor: colors.greyLighten2 }}
-                        // wrapperStyle={{ marginLeft: 0 }}
+                    (<ListItem key={index} title={item.name} rightIcon={
+                        <Ionicons name={item.icon.name} color={colors.greyDarken2} size={35} />}
+                        containerStyle={{paddingHorizontal: 20, paddingVertical: 15, borderBottomColor: colors.greyLighten2 }}
                         titleStyle={{ marginLeft: 0 }}
                         onPress={item.onPress}></ListItem>)
                 )}
@@ -90,7 +86,7 @@ export default class SettingsScreen extends React.Component {
                 index: 0,
                 key: null,
                 actions: [
-                    NavigationActions.navigate({ routeName: 'Login' })
+                    NavigationActions.navigate({ routeName: 'Main' })
                 ],
             });
             this.props.navigation.dispatch(resetActions);

@@ -1,13 +1,15 @@
+import * as ToastAction from 'actions/toast-reducer.action';
+import colors from 'assets/variables/colors';
+import environments from 'environments/environment';
 import React from 'react';
 import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import ImageViewer from 'react-native-image-zoom-viewer';
-import environments from 'environments/environment';
-import { addFollowShop, removeFollowShop } from 'services/auth/follow';
-import colors from 'assets/variables/colors';
-import sizes from 'assets/variables/sizes';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { followShop, unfollowShop } from 'services/auth-user/follow';
 const { width } = Dimensions.get('window');
 
-export default class LatestCard extends React.Component {
+class LatestCard extends React.Component {
 
     constructor(props) {
         super(props);
@@ -22,8 +24,7 @@ export default class LatestCard extends React.Component {
 
         this.props.item.newItems.map((item, index) => items.push(
             <TouchableOpacity key={item._id} onPress={() => this.setModalVisible(true, index)}>
-                <Image style={{ width: 100, height: 100, marginRight: sizes.margin2 }}
-                    source={{ uri: environments.IMAGE_URL + item.item_images[item.profile_image_index] }} />
+                {item.item_images != undefined && <Image style={{ width: 100, height: 100, marginRight: 10 }} source={{ uri: environments.IMAGE_URL + item.item_images[item.profile_image_index] }} />}
             </TouchableOpacity>
         ));
 
@@ -50,17 +51,21 @@ export default class LatestCard extends React.Component {
     }
 
     removeFollowShop = (shopId) => {
-        removeFollowShop(shopId, (result) => {
+        unfollowShop(shopId, (result) => {
             if (result['success']) {
                 this.setState({ isFollow: result['follow'] });
             }
+        }, (err) => {
+            this.props.onToast(err)
         });
     }
     addFollowShop = (shopId) => {
-        addFollowShop(shopId, (result) => {
+        followShop(shopId, (result) => {
             if (result['success']) {
                 this.setState({ isFollow: result['follow'] });
             }
+        }, (err) => {
+            this.props.onToast(err)
         });
     }
     navigateToShop = (shopId) => {
@@ -75,7 +80,7 @@ const ShopProfileImage = ({ item, following, onTitlePress, removeFollowShop, add
     <View style={{ flexDirection: 'row' }}>
         <TouchableOpacity onPress={onTitlePress}>
             <Image
-            style={{ width: 50, height: 50, marginRight: sizes.margin2 }}
+            style={{ width: 50, height: 50, marginRight: 10 }}
             source={{ uri: environments.IMAGE_URL + item.profile_image }} />
         </TouchableOpacity>
         <View>
@@ -87,7 +92,7 @@ const ShopProfileImage = ({ item, following, onTitlePress, removeFollowShop, add
                 <TouchableOpacity
                     onPress={removeFollowShop}>
                     <View style={{ backgroundColor: colors.main, borderColor: colors.main, borderWidth: 3, borderRadius: 3 }}>
-                        <Text style={{ margin: sizes.margin1, color: colors.white }}>Following</Text>
+                        <Text style={{ margin: 5, color: colors.white }}>Following</Text>
                     </View>
                 </TouchableOpacity>
             </View> :
@@ -95,7 +100,7 @@ const ShopProfileImage = ({ item, following, onTitlePress, removeFollowShop, add
                 <TouchableOpacity
                     onPress={addFollowShop}>
                     <View style={{ borderColor: colors.main, borderWidth: 1, borderRadius: 3 }}>
-                        <Text style={{ margin: sizes.margin1, color: colors.main }}>Follow</Text>
+                        <Text style={{ margin: 5, color: colors.main }}>Follow</Text>
                     </View>
                 </TouchableOpacity>
             </View>}
@@ -124,13 +129,13 @@ const ModalItem = ({ item, isVisible, onSwipeDown, onButtonPress, imageIndex }) 
             <ImageViewer backgroundColor="rgba(0,0,0,.8)" enableSwipeDown={true} onSwipeDown={onSwipeDown} index={imageIndex} imageUrls={images}
                 renderFooter={(currentIndex) => {
                     let it = item.newItems[currentIndex || 0];
-                    return (<View style={{ width, alignItems: 'center', justifyContent: 'center', paddingBottom: sizes.padding2, paddingTop: sizes.padding2 }}>
+                    return (<View style={{ width, alignItems: 'center', justifyContent: 'center', paddingVertical: 10 }}>
                         <TouchableOpacity onPress={onButtonPress}>
-                            <View style={{ paddingTop: sizes.padding1, paddingBottom: sizes.padding1, paddingLeft: sizes.padding2, paddingRight: sizes.padding2, borderRadius: 20, backgroundColor: colors.main }}>
+                            <View style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 20, backgroundColor: colors.main }}>
                                 <Text style={{ color: colors.white }}>{it.currency + ' ' + it.price + ' | Details'}</Text>
                             </View>
                         </TouchableOpacity>
-                        <Text style={{ color: colors.white, fontSize: sizes.fontsize3 }}>{it.name}</Text>
+                        <Text style={{ color: colors.white, fontSize: 15 }}>{it.name}</Text>
                     </View>)
                 }}
             />
@@ -138,22 +143,30 @@ const ModalItem = ({ item, isVisible, onSwipeDown, onButtonPress, imageIndex }) 
     )
 }
 
+const mapStateToProps = state => {
+    return { };
+  }
+  
+  const mapDispatchToProps = dispatch => {
+    return bindActionCreators({ ...ToastAction }, dispatch);
+  }
+  export default connect(mapStateToProps, mapDispatchToProps)(LatestCard);
+
 const styles = StyleSheet.create({
     card: {
-        padding: sizes.padding2,
-        backgroundColor: colors.lightenGrey,
-        marginBottom: sizes.margin2
+        padding: 10,
+        backgroundColor: colors.greyLighten5,
+        marginBottom: 10
     },
     modalContainer: {
         backgroundColor: 'rgba(0,0,0,1)',
         flex: 1,
-        width: sizes.w100,
-        height: sizes.h100,
+        width: '100%',
+        height: '100%',
         alignItems: 'center',
         justifyContent: 'center'
     },
     description: {
-        marginTop: sizes.margin1,
-        marginBottom: sizes.margin1
+        marginVertical: 5
     }
 });

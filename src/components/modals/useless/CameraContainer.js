@@ -1,9 +1,9 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import colors from 'assets/variables/colors';
+import LoadingScreen from 'components/modals/LoadingScreen';
 import { Camera, ImageManipulator, Permissions } from 'expo';
 import React from 'react';
 import { Dimensions, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Icon } from 'react-native-elements';
-import colors from 'assets/variables/colors';
-import LoadingScreen from 'components/modals/LoadingScreen';
 const { width } = Dimensions.get('window');
 
 export default class CameraContainer extends React.Component {
@@ -50,7 +50,7 @@ export default class CameraContainer extends React.Component {
                                 justifyContent: 'center',
                                 borderWidth: 3
                             }}>
-                            <Text style={{ color: '#fff', position: 'absolute', left: 20, bottom: 45, fontSize: 20 }} onPress={this.props.onPressModalClose}>Cancel</Text>
+                            <Text style={{ color: colors.white, position: 'absolute', left: 20, bottom: 45, fontSize: 20 }} onPress={this.props.onPressModalClose}>Cancel</Text>
                             <View style={{ alignSelf: 'flex-end',
                                     alignItems: 'center',
                                     borderRadius: 50,

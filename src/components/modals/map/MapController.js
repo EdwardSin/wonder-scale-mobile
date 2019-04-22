@@ -1,17 +1,17 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity, Text, Image } from 'react-native';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import * as MapAction from 'actions/map-reducer.action';
 import colors from 'assets/variables/colors';
-import { bindActionCreators } from 'redux';
-import { onRadiusChanged, refreshShops, onMarkersDisplayed } from 'actions/map-reducer-action';
+import PropTypes from 'prop-types';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { connect } from 'react-redux';
-import { getNearShopByPoint } from 'services/users';
-import environments from 'environments/environment';
+import { bindActionCreators } from 'redux';
 
 const SearchAreaButton = ({ onPress, loading }) => (
   <TouchableOpacity activeOpacity={.8} disabled={loading} onPress={onPress} >
     <View style={{ backgroundColor: colors.secondary, width: 150, height: 38, justifyContent: 'center', alignItems: 'center' }}>
-      {loading ? (<Image style={{ width: 20, height: 20 }} source={Images.loadingWhite} />) : (<Text style={{ color: colors.white }}>Search this area</Text>)}
+      {loading ? (<ActivityIndicator color={colors.white} />) : (<Text style={{ color: colors.white }}>Search this area</Text>)}
     </View>
   </TouchableOpacity>
 )
@@ -45,37 +45,18 @@ class MapController extends React.Component {
     )
   }
   onSearchPress = () => {
-    this.getNearestShops(this.props.mapSetting.longitude, this.props.mapSetting.latitude, this.props.mapSetting.radius);
-    this.props.addMapchangeListener();
+    this.props.triggerRefresh();
   }
-  
-  getNearestShops = (lng, lat, radius) => {
-    getNearShopByPoint(lng, lat, radius, (result) => {
-        this.props.refreshShops(result.result);
-        this.props.onMarkersDisplayed({
-            markers: result.result.map(x => {
-              return {
-                _id: x._id,
-                coordinate:
-                  {
-                    longitude: x.location.coordinates[0],
-                    latitude: x.location.coordinates[1]
-                  },
-                title: x.name,
-                description: x.description,
-                image: { uri: environments.IMAGE_URL + x.profile_image }
-              }
-            })
-          });
-    })
-}
   onMaxPress = () => {
-    let radius = this.props.mapSetting.radius + 1000;
-    this.props.onRadiusChanged(radius);
+    const { radius, latitudeDelta } = this.props.mapSetting;
+    let _radius = (radius / latitudeDelta + 10000) * latitudeDelta;
+    this.props.onRadiusChanged(_radius);
   }
   onMinPress = () => {
-    let radius = this.props.mapSetting.radius - 1000;
-    this.props.onRadiusChanged(radius);
+    const { radius, latitudeDelta } = this.props.mapSetting;
+    let _radius = (radius / latitudeDelta - 10000) * latitudeDelta;
+    console.log(radius);
+    this.props.onRadiusChanged(_radius);
   }
 }
 const mapStateToProps = state => {
@@ -84,7 +65,7 @@ const mapStateToProps = state => {
   };
 }
 const mapDispatchToProps = dispatch => {
-  return bindActionCreators({ onRadiusChanged, refreshShops, onMarkersDisplayed }, dispatch);
+  return bindActionCreators({ ... MapAction}, dispatch);
 }
 export default connect(mapStateToProps, mapDispatchToProps)(MapController);
 
@@ -104,3 +85,11 @@ const styles = StyleSheet.create({
     borderRadius: 5
   }
 });
+
+MapController.defaultProps = {
+  loading: false
+}
+
+MapController.propsTypes = {
+  loading: PropTypes.bool
+}

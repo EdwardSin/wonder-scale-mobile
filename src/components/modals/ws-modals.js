@@ -19,18 +19,20 @@ import NotificationLabel from './NotificationLabel';
 import WsCard from './WsCard';
 import WsVoucherCard from './WsVoucherCard';
 import MapController from './map/MapController';
-import SearchbarController from './search/SearchbarController';
 import ListSelectionItem from './search/ListSelectionItem';
 import MapIcon from './map/MapIcon';
 import WsSearchbar from './search/WsSearchbar';
 import WsDropdown from './WsDropdown';
 import FilterController from './search/FilterController';
 import SearchbarList from './search/SearchbarList';
+import WsToast from './WsToast';
+import Header from './Header';
 
 export {
     WsButton, WsPicker, WsTextInput, BottomButton, WsSlashText, WsDateTimePicker, LoadingScreen,
     EmptyList, LoadingSpinner, WsRefreshControl, WsItem, ReviewCard, WsItemList,
     Title, PictureSelect, WsStatusBar, LatestCard, NotificationLabel, WsCard, WsVoucherCard,
-    WsDropdown, FilterController,SearchbarList,
-    MapController, SearchbarController, ListSelectionItem, WsSearchbar, MapIcon
+    WsDropdown, FilterController,SearchbarList, WsToast,
+    MapController, ListSelectionItem, WsSearchbar, MapIcon, 
+    Header
 }

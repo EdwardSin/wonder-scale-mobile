@@ -10,7 +10,7 @@ export default class NotificationLabel extends React.Component {
     }
     render() {
         return (
-            <View {...this.props} style={[styles.container, { backgroundColor: this.props.item.read ? colors.white : '#f7f7f7' }]}>
+            <View {...this.props} style={[styles.container, { backgroundColor: this.props.item.read ? colors.white : colors.greyLighten5 }]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Image style={{ width: 50, height: 50, marginRight: 10 }}
                         source={{ uri: this.props.item.profile_image }} />

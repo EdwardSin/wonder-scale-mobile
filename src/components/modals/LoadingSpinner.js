@@ -8,7 +8,7 @@ export default class LoadingSpinner extends React.Component {
     super(props);
   }
   render() {
-    return (<View style={styles.container}>
+    return (<View {...this.props} style={[styles.container, this.props.style]}>
       <ActivityIndicator size="small" color={colors.secondary}/>
     </View>);
   }
@@ -16,8 +16,7 @@ export default class LoadingSpinner extends React.Component {
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 100,
-    paddingBottom: 100,
+    paddingVertical: 100,
     flex:1,
     backgroundColor: colors.white
   }

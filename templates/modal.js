@@ -22,8 +22,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     width: 300,
     padding: 5,
-    paddingLeft: 5,
-    paddingRight: 5,
+    paddingHorizontal: 5,
     color: colors.greyDarken1
   }
 });

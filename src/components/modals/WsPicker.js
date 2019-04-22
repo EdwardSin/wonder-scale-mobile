@@ -60,68 +60,33 @@ export class WSPickerContent extends React.Component {
     this.setModalVisible = this.setModalVisible.bind(this);
   }
   render() {
-    const {
-      mode,
-      style,
-      customStyles,
-      disabled,
-      minuteInterval,
-      timeZoneOffsetInMinutes,
-      cancelBtnText,
-      confirmBtnText,
-      TouchableComponent,
-      testID,
-      cancelBtnTestID,
-      confirmBtnTestID,
-      allowFontScaling,
-      locale,
-      items
-    } = this.props;
-    const valueInputStyle = [
-      styles.valueInput, customStyles.valueInput,
-      disabled && styles.disabled,
-      disabled && customStyles.disabled
-    ];
-
-    return <TouchableComponent
-      style={[styles.valueTouch, style]}
-      underlayColor={'transparent'}
-      onPress={this.onPressValue}
-      testID={testID}
-    >
+    const { mode, style, customStyles, disabled, minuteInterval, timeZoneOffsetInMinutes,
+      cancelBtnText, confirmBtnText, TouchableComponent, testID, cancelBtnTestID,
+      confirmBtnTestID, allowFontScaling, locale, items } = this.props;
+    const valueInputStyle = [styles.valueInput, customStyles.valueInput,
+    disabled && styles.disabled,
+    disabled && customStyles.disabled];
+    return <TouchableComponent style={[styles.valueTouch, style]}
+      underlayColor={'transparent'} onPress={this.onPressValue} testID={testID}>
       <View style={[styles.valueTouchBody, customStyles.valueTouchBody]}>
-        {
-          !this.props.hideText ?
-            <View style={valueInputStyle}>
-              {this.getTitleElement()}
-            </View>
-            :
-            <View />
-        }
-        {<Modal
-          // @ts-ignore
-          transparent={true}
+        {!this.props.hideText ? <View style={valueInputStyle}>{this.getTitleElement()}</View> : <View />}
+        {/* 
+  // @ts-ignore */}
+        {<Modal transparent={true}
           animationType="none"
           visible={this.state.modalVisible}
           supportedOrientations={SUPPORTED_ORIENTATIONS}
           onRequestClose={() => { this.setModalVisible(false); }}
         >
-          <View
-            style={{ flex: 1 }}
-          >
+          <View style={{ flex: 1 }}>
             <TouchableComponent
               style={styles.valuePickerMask}
               activeOpacity={1}
               underlayColor={'transparent'}
               onPress={this.onPressMask}
             >
-              <TouchableComponent
-                underlayColor={'#fff'}
-                style={{ flex: 1 }}
-              >
-                <Animated.View
-                  style={[styles.valuePickerCon, { height: this.state.animatedHeight }, customStyles.valuePickerCon]}
-                >
+              <TouchableComponent underlayColor={colors.white} style={{ flex: 1 }}>
+                <Animated.View style={[styles.valuePickerCon, { height: this.state.animatedHeight }, customStyles.valuePickerCon]}>
                   <Picker selectedValue={this.getValue()} style={[styles.valuePicker, customStyles.valuePicker]}
                     onValueChange={(itemValue, itemIndex) => this.setState({ label: itemValue, index: itemIndex })}>
                     {(items || []).map((item, index) => <Picker.Item key={index} label={item.label} value={item.value} />)}
@@ -132,10 +97,7 @@ export class WSPickerContent extends React.Component {
                     style={[styles.btnText, styles.btnCancel, customStyles.btnCancel]}
                     testID={cancelBtnTestID}
                   >
-                    <Text
-                      allowFontScaling={allowFontScaling}
-                      style={[styles.btnTextText, styles.btnTextCancel, customStyles.btnTextCancel]}
-                    >
+                    <Text allowFontScaling={allowFontScaling} style={[styles.btnTextText, styles.btnTextCancel, customStyles.btnTextCancel]}>
                       {cancelBtnText}
                     </Text>
                   </TouchableComponent>
@@ -186,45 +148,37 @@ export class WSPickerContent extends React.Component {
     }
   }
   onPressMask() {
-    if (typeof this.props.onPressMask === 'function') {
-      this.props.onPressMask();
-    } else {
-      this.onPressCancel();
-    }
+    const { onPressMask } = this.props;
+    typeof onPressMask === 'function' ? onPressMask() : this.onPressCancel();
   }
   onPressCancel() {
+    const { onCloseModal } = this.props;
     this.setModalVisible(false);
 
-    if (typeof this.props.onCloseModal === 'function') {
-      this.props.onCloseModal();
+    if (typeof onCloseModal === 'function') {
+      onCloseModal();
     }
   }
 
   onPressConfirm() {
+    const { onCloseModal } = this.props;
     this.valuePicked();
     this.setModalVisible(false);
 
-    if (typeof this.props.onCloseModal === 'function') {
-      this.props.onCloseModal();
+    if (typeof onCloseModal === 'function') {
+      onCloseModal();
     }
   }
   onValueChange(value) {
-    this.setState({
-      allowPointerEvents: false,
-      value: value
-    });
+    this.setState({ allowPointerEvents: false, value });
     const timeoutId = setTimeout(() => {
-      this.setState({
-        allowPointerEvents: true
-      });
+      this.setState({ allowPointerEvents: true });
       clearTimeout(timeoutId);
     }, 200);
   }
   onValuePicked({ action, value }) {
     if (action !== DatePickerAndroid.dismissedAction) {
-      this.setState({
-        value: value
-      });
+      this.setState({ value });
       this.valuePicked();
     } else {
       this.onPressCancel();
@@ -246,24 +200,29 @@ export class WSPickerContent extends React.Component {
     this.setModalVisible(true);
   }
   getValue(value = this.props.value) {
-    if ((this.props.items||[]).length && this.state.index > -1) {
-      return (this.props.items || [])[this.state.index].value;
+    const { items } = this.props;
+    const { index } = this.state;
+    if ((items || []).length && index > -1) {
+      return (items || [])[index].value;
     }
     return value;
   }
 
   getLabel(label = this.props.label) {
-    
-    if ((this.props.items || []).length && this.state.index > -1) {
-      return (this.props.items || [])[this.state.index].label;
+    const { items } = this.props;
+    const { index } = this.state;
+    if ((items || []).length && index > -1) {
+      return (items || [])[index].label;
     }
-    
-    return label || (this.props.items && this.props.items.length) ? this.props.items[0].label : '';
+
+    return label || (items && items.length) ? items[0].label : '';
   }
 
   valuePicked() {
-    if (typeof this.props.onValueChange === 'function') {
-      this.props.onValueChange(this.getValue(this.state.value), this.state.value);
+    const { onValueChange } = this.props;
+    const { value } = this.state;
+    if (typeof onValueChange === 'function') {
+      onValueChange(this.getValue(value), value);
     }
   }
   getTitleElement() {
@@ -324,7 +283,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent'
   },
   valuePickerCon: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.white,
     height: 0,
     borderTopColor: colors.greyLighten2,
     borderTopWidth: 1,
@@ -363,8 +322,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: colors.primary,
     width: '100%',
-    paddingLeft: '10%',
-    paddingRight: '10%',
+    paddingHorizontal: '10%',
     textAlign: 'right'
   }
 });

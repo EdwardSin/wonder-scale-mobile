@@ -308,8 +308,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.white,
     },
     description: {
-        marginTop: 5,
-        marginBottom: 5
+        marginVertical: 5
     },
     card: {
         padding: 10,

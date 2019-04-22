@@ -1,16 +1,16 @@
 
+import * as MapAction from 'actions/map-reducer.action';
+import * as UserAction from 'actions/user-reducer.action';
 import colors from 'assets/variables/colors';
 import OrderHelper from 'components/helpers/orderhelper';
 import SearchHelper from 'components/helpers/searchhelper';
-import { EmptyList, LoadingSpinner, MapIcon, WsCard, WsItem, WsRefreshControl, WsStatusBar, MapModal, FilterController } from 'components/modals/ws-modals';
-import React from 'react';
-import { bindActionCreators } from 'redux';
-import { Dimensions, FlatList, Modal, StyleSheet, View, ScrollView } from 'react-native';
-import { connect } from 'react-redux';
-import _ from 'lodash';
-import { getNearShopByPoint } from 'services/users';
-import { onMapModalPressed, onCoordinatesChanged, refreshShops, onMarkersDisplayed } from 'actions/map-reducer-action';
+import { EmptyList, FilterController, LoadingSpinner, MapIcon, WsCard, WsItem, WsRefreshControl } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
+import React from 'react';
+import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
+import { getNearsShopByPoint } from 'services/shops';
 const { height, width } = Dimensions.get('window');
 
 class SearchScreen extends React.Component {
@@ -25,10 +25,24 @@ class SearchScreen extends React.Component {
       text: '',
       shops: []
     };
+    
   }
   componentDidMount() {
     this.getCurrentPosition();
+    //this.getUser();
   }
+  // getUser = () => {
+  //   this.setState({ loading: true });
+  //   getBlackListWithUser((result) => {
+  //     this.props.updateUser(result);
+  //     this.setState({ user: result, loading: false });
+  //   }, (err) => {
+  //     this.setState({ loading: false });
+  //     // onSignOut().then(result => {
+  //     //   this.props.navigation.navigate('Login');
+  //     // });
+  //   })
+  // };
   renderShop = ({ item }) => (
     <View style={{ padding: 3, width: '50%' }}>
       <WsCard onPress={() => {this.navigateToShop(item._id)}} item={item} >{item.name}</WsCard>
@@ -36,8 +50,7 @@ class SearchScreen extends React.Component {
   );
   renderItem = ({ item }) => (
     <View style={{ padding: 3, width: '50%' }}>
-      <WsItem navigation={this.props.navigation} showFollow={true}
-        follow={item.follow} showSeller={true} item={item} />
+      <WsItem navigation={this.props.navigation} showFollow={true} follow={item.follow} showSeller={true} item={item} />
     </View>
   );
 
@@ -67,9 +80,9 @@ class SearchScreen extends React.Component {
       </View>
     );
   }
-
-  getNearestShop = (longitude, latitude, maxdistance) => {
-    getNearShopByPoint(longitude, latitude, maxdistance, (result) => {
+  getNearestShop = (longitude, latitude, maxdistance, currentPoint) => {
+    getNearsShopByPoint(longitude, latitude, maxdistance, currentPoint, (result) => {
+      this.getItem();
       this.props.refreshShops(result);
       this.props.onMarkersDisplayed({
         markers: result.result.map(x => {
@@ -89,19 +102,18 @@ class SearchScreen extends React.Component {
     })
   };
   getCurrentPosition = () => {
+    let {latitudeDelta, longitudeDelta, radius} = this.props.mapSetting;
     navigator.geolocation.getCurrentPosition(
       position => {
         const { coordinate, routeCoordinates } = this.state;
         const { latitude, longitude } = position.coords;
-        const newCoordinate = { latitude, longitude };
-
+        this.setState({ currentPoint: { lat: latitude, lng: longitude }});
         this.props.onCoordinatesChanged({
-          ...newCoordinate,
-          latitudeDelta: this.props.mapSetting.latitudeDelta,
-          longitudeDelta: this.props.mapSetting.longitudeDelta
+          latitude, longitude,
+          latitudeDelta: latitudeDelta,
+          longitudeDelta: longitudeDelta
         })
-
-        this.getNearestShop(longitude, latitude, this.props.mapSetting.radius);
+        this.getNearestShop(longitude, latitude, radius, {lat: latitude, lng: longitude});
       },
       error => {
         alert(error);
@@ -120,7 +132,7 @@ class SearchScreen extends React.Component {
       //items = FilterHelper.filterShopType();
     }
     items = OrderHelper.orderByAndSetItemList(order, items);
-    this.setState({ displayItems: items, loading: false });
+    this.setState({ displayItems: items, loading: false, refreshing: false });
 
     //list = FilterHelper.filterItemType(list, type);
     //list = FilterHelper.filterItemStatus(list, isCurrentShop);
@@ -134,26 +146,22 @@ class SearchScreen extends React.Component {
   };
 
   handleRefresh = () => {
+    let { circleLatitude, circleLongitude, radius } = this.props.mapSetting;
     this.setState({ refreshing: true, loading: true }, () => {
-      this.getNearestShop(this.props.mapSetting.longitude, this.props.mapSetting.latitude, this.props.mapSetting.radius);
+      this.getNearestShop(circleLongitude, circleLatitude, radius, this.state.currentPoint);
     });
   };
-
-  // setModalVisible = value => {
-  //   this.setState({ showMap: value });
-  // };
 }
 const mapStateToProps = state => {
   return {
     mapSetting: state.mapReducer.mapSetting,
-    order: state.mapReducer.optionbar.order,
-    type: state.mapReducer.keywordSearchbar.type,
-    service: state.mapReducer.keywordSearchbar.service,
-    keyword: state.mapReducer.keywordSearchbar.value
+    keywordSearchbar: state.mapReducer.keywordSearchbar,
+    orderbar: state.mapReducer.optionbar,
+    user: state.userReducer.user
   };
 }
 const mapDispatchToProps = dispatch => {
-  return bindActionCreators({ onMapModalPressed, onCoordinatesChanged, refreshShops, onMarkersDisplayed }, dispatch);
+  return bindActionCreators({ ...MapAction, ...UserAction }, dispatch);
 }
 export default connect(mapStateToProps, mapDispatchToProps)(SearchScreen);
 

@@ -1,16 +1,13 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ShopAction from 'actions/shop-reducer.action';
 import colors from 'assets/variables/colors';
-import sizes from 'assets/variables/sizes';
-import { EmptyList, LoadingSpinner, WsItem, WsRefreshControl, WsSearchbar } from 'components/modals/ws-modals';
-import environments from 'environments/environment';
-import { Constants } from 'expo';
+import { EmptyList, LoadingSpinner, WsItem, WsRefreshControl, WsSearchbar, WsStatusBar } from 'components/modals/ws-modals';
 import _ from 'lodash';
 import React from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SearchBar } from 'react-native-elements';
+import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { getAllPublicItemsByShopId, getPublicDiscountItemsByShopId, getPublicNewItemsByShopId } from 'services/items';
-
-export default class ShopAllItemsScreen extends React.Component {
+class ShopAllItemsScreen extends React.Component {
   flatListRef;
   constructor(props) {
     super(props);
@@ -24,7 +21,7 @@ export default class ShopAllItemsScreen extends React.Component {
       discountItems: [],
       searchItems: [],
       refreshing: false,
-      shopId: environments.shop_id//this.props.navigation.state.params.shopId
+      shopId: this.props.shop_id
     }
   }
   componentDidMount() {
@@ -34,7 +31,7 @@ export default class ShopAllItemsScreen extends React.Component {
     return (
       this.state.loading ? <LoadingSpinner /> :
         (<View style={styles.container}>
-          <View style={{ height: Constants.statusBarHeight }}></View>
+          <WsStatusBar />
           <View style={{ marginHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
             <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Item'} />
           </View>
@@ -53,6 +50,7 @@ export default class ShopAllItemsScreen extends React.Component {
         </View>)
     );
   }
+  // #region Events
   onChangeText = _.debounce((value) => {
     if (value === '') {
       this.setState({ searchItems: this.state.items, searchKeyword: value });
@@ -121,52 +119,42 @@ export default class ShopAllItemsScreen extends React.Component {
   onNewItemsPress = () => {
     this.setState({ loading: true, searchKeyword: '' });
     getPublicNewItemsByShopId(this.state.shopId, (result) => {
-      this.setState({ newItems: result['result'] });
       this.setState({
+        newItems: result['result'],
         searchItems: result['result']['newItems'],
-        order: 'new'
+        order: 'new',
+        loading: false
       });
-      this.setState({ loading: false });
     })
   }
   onDiscountPress = () => {
     this.setState({ loading: true, searchKeyword: '' });
     getPublicDiscountItemsByShopId(this.state.shopId, (result) => {
-      this.setState({ discountItems: result['result'] });
       this.setState({
-        searchItems: result['result'],
-        order: 'discount'
+        discountItems: result['result'],
+        searchItems: result['result'], order: 'discount',
+        loading: false
       });
-      this.setState({ loading: false });
     })
   }
+  // #endregion
 }
-const CustomSearchBar = ({ onChangeText }) => (
-  <SearchBar containerStyle={{
-    backgroundColor: 'transparent', marginTop: Constants.statusBarHeight,
-    borderBottomColor: 'transparent',
-    borderTopColor: 'transparent'
-  }} 
-    inputContainerStyle={{ backgroundColor: colors.greyLighten2 }}
-    inputStyle={{ backgroundColor: colors.greyLighten2 }}
-    onChangeText={onChangeText} placeholder='Search Item...' />
-)
 const OrderItem = ({ onPress, label, value, selected }) => (
   <TouchableOpacity onPress={onPress}>
-    <View style={{ paddingRight: sizes.padding2, paddingLeft: sizes.padding2 }}>
-      <Text style={{ fontSize: sizes.fontsize3, fontWeight: selected === value ? 'bold' : 'normal' }}>{label}</Text>
+    <View style={{ paddingHorizontal: 10 }}>
+      <Text style={{ fontSize: 15, fontWeight: selected === value ? 'bold' : 'normal' }}>{label}</Text>
     </View>
   </TouchableOpacity>
 )
 const CustomOrderBar = ({ onPress, onNewItemsPress, onDiscountPress, isSelected }) => (
-  <View style={{ justifyContent: 'center', padding: 10}}>
-    <ScrollView contentContainerStyle={{justifyContent: 'center', alignItems: 'center'}} showsHorizontalScrollIndicator={false} horizontal={true}>
+  <View style={{ justifyContent: 'center', padding: 10 }}>
+    <ScrollView contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', height: 30 }} showsHorizontalScrollIndicator={false} horizontal={true}>
       <OrderItem onPress={() => onPress('thebest')} label={'The Best'} value={'thebest'} selected={isSelected} />
       <OrderItem onPress={() => onNewItemsPress()} label={'New'} value={'new'} selected={isSelected} />
       <OrderItem onPress={() => onDiscountPress()} label={'Discount'} value={'discount'} selected={isSelected} />
       {/* <TouchableOpacity onPress={() => onPress('price')}>
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingRight: sizes.padding2, paddingLeft: sizes.padding2 }}>
-          <Text style={{ fontSize: sizes.fontsize3, fontWeight: isSelected === 'price_low_to_high' || isSelected === 'price_high_to_low' ? 'bold' : 'normal' }}>Price</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 10 }}>
+          <Text style={{ fontSize: 15, fontWeight: isSelected === 'price_low_to_high' || isSelected === 'price_high_to_low' ? 'bold' : 'normal' }}>Price</Text>
           <View>
             <MaterialCommunityIcons style={{ marginTop: -5, height: 10}} color={isSelected === 'price_high_to_low' ? colors.black : colors.grey} size={15} name='chevron-up' />
             <MaterialCommunityIcons style={{ height: 10}} color={isSelected === 'price_low_to_high' ? colors.black : colors.grey} size={15} name='chevron-down'/>
@@ -178,15 +166,25 @@ const CustomOrderBar = ({ onPress, onNewItemsPress, onDiscountPress, isSelected 
   </View>
 )
 
-const ContentContainer = ({ item, navigation, index }) =>  (
+const ContentContainer = ({ item, navigation, index }) => (
   <View style={{ width: '50%' }}>
-    <WsItem style={{ borderLeftWidth: index % 2 ? 0: 1, borderTopWidth: index > 1 ? 0 : 1}} navigation={navigation} showFollow={true} item={item}></WsItem>
+    <WsItem style={{ borderLeftWidth: index % 2 ? 0 : 1, borderTopWidth: index > 1 ? 0 : 1 }} navigation={navigation} showFollow={true} item={item}></WsItem>
   </View>
 )
+
+const mapStateToProps = state => {
+  return {
+    shop_id: state.shopReducer.shop_id
+  };
+}
+const mapDispatchToProps = dispatch => {
+  return bindActionCreators({ ...ShopAction }, dispatch);
+}
+export default connect(mapStateToProps, mapDispatchToProps)(ShopAllItemsScreen);
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.white
-  }
+  },
 });

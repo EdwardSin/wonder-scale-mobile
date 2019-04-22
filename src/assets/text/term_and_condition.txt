@@ -45,7 +45,7 @@ Automated Collection of Data
 Your Shop must not collect users' content or information, or otherwise access WonderScale, using automated means (such as harvesting bots, robots, spiders, or scrapers) without written permission from WonderScale.
 
 Calls to Action
-Your Shop cannot use information obtained from a person’s interaction with your Shop's call-to-action button for any purpose other than to provide the service associated with the call-to-action button. If you want to use this information for any other purpose, first obtain a person’s explicit consent.
+Your Shop cannot use information obtained from a person’s interaction with your Shop's call-to.action button for any purpose other than to provide the service associated with the call-to.action button. If you want to use this information for any other purpose, first obtain a person’s explicit consent.
 
 Shops-Specific Policies
 1.  Platform Policy

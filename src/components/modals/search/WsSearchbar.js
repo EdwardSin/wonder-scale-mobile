@@ -1,7 +1,6 @@
-import { View, StyleSheet, TextInput } from 'react-native';
-import { SearchBar } from 'react-native-elements';
 import colors from 'assets/variables/colors';
 import React from 'react';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 export default class WsSearchbar extends React.Component {
     constructor(props) {
@@ -9,8 +8,7 @@ export default class WsSearchbar extends React.Component {
     }
     render() {
         return (<View style={[{ height: 30, flexDirection: 'row' }, this.props.containerStyle]}>
-            <TextInput {...this.props} placeholder={this.props.placeholder} style={styles.textInput} onChangeText={this.props.onChangeText}
-                onFocus={this.props.onFocus}/>
+            <TextInput {...this.props} style={styles.textInput} />
         </View>)
     }
 }

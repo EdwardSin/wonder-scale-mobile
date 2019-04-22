@@ -5,7 +5,7 @@ import Moment from 'moment';
 import React from 'react';
 import { Alert, Animated, Dimensions, Image, ImageEditor, Keyboard, Linking, Platform, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { editUserInfo, getUser } from 'services/auth/auth-user';
+import { editUserInfo, getUser } from 'services/auth-user/auth-user';
 import { Feather } from '@expo/vector-icons';
 
 export default class EditProfileScreen extends React.Component {
@@ -65,7 +65,7 @@ export default class EditProfileScreen extends React.Component {
         return this.state.loading ? <LoadingScreen loading={this.state.loading} title={'Loading...'} /> : (<View style={styles.container}>
             <LoadingScreen loading={this.state.editLoading} title={'Loading...'} onRequestClose={this.onRequestClose} />
             <Animated.View style={{ height: this.state.bounceValue }}>
-                <View style={{ paddingLeft: 20, paddingRight: 20 }}>
+                <View style={{ paddingHorizontal: 20 }}>
                     <Title>Edit Profile</Title>
                 </View>
                 <KeyboardAwareScrollView extraHeight={150}>

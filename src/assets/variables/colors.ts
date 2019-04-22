@@ -264,8 +264,6 @@ const colors = {
     primaryHover: '#b30000',
     secondary: '#282C35',
     secondaryHover: '#4d5466',
-
-    lightenGrey: '#f7f7f7',
     lightGrey: '#e6e6e6',
     gold: '#ffd700'
 };

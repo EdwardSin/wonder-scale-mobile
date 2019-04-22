@@ -27,8 +27,7 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     button: {
-        paddingTop: 20,
-        paddingBottom: 20,
+        paddingVertical: 20,
         borderRadius: 5,
         flexDirection: 'row',
         alignItems: 'center',
