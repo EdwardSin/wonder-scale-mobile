@@ -1,14 +1,14 @@
 import colors from 'assets/variables/colors';
 import { EmptyList, LoadingSpinner, WsItem, WsRefreshControl, WsSearchbar, WsStatusBar } from 'components/modals/ws-modals';
-import environments from 'environments/environment';
 import { Constants } from 'expo';
 import _ from 'lodash';
 import React from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SearchBar } from 'react-native-elements';
-import { getPublicDiscountItemsByShopId } from 'services/items';
+import { connect } from 'react-redux';
+import { getPublicDiscountItemsByShopId } from 'services/http/public/items';
 
-export default class ShopDiscountItemsScreen extends React.Component {
+class ShopDiscountItemsScreen extends React.Component {
     flatListRef;
     constructor(props) {
         super(props);
@@ -21,7 +21,7 @@ export default class ShopDiscountItemsScreen extends React.Component {
             discountItems: [],
             searchItems: [],
             refreshing: false,
-            shopId: environments.shop_id//this.props.navigation.state.params.shopId
+            shopId: this.props.shop_id
             //shopId: this.props.navigation.state.params.shopId
         }
     }
@@ -33,7 +33,7 @@ export default class ShopDiscountItemsScreen extends React.Component {
             this.state.loading ? <LoadingSpinner /> :
                 (<View style={styles.container}>
                     <WsStatusBar />
-                    <View style={{ marginHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
+                    <View style={{ marginTop: 10, paddingHorizontal: 10 }}>
                         <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Item'} />
                     </View>
                     <CustomOrderBar
@@ -42,6 +42,7 @@ export default class ShopDiscountItemsScreen extends React.Component {
                         onDiscountPress={this.onDiscountPress} />
                     <FlatList data={this.state.searchItems}
                         numColumns={2}
+                        style={{ backgroundColor: colors.greyLighten3, padding: 5 }}
                         keyExtractor={(item) => item._id}
                         ref={(ref) => this.flatListRef = ref}
                         ListEmptyComponent={<EmptyList message={'No discount item!'} />}
@@ -136,11 +137,18 @@ const CustomOrderBar = ({ onPress, onDiscountPress, isSelected }) => (
 )
 
 const ContentContainer = ({ item, navigation, index }) => (
-    <View style={{ width: '50%' }}>
-        <WsItem style={{ borderLeftWidth: index % 2 ? 0 : 1, borderTopWidth: index > 1 ? 0 : 1 }} navigation={navigation} showFollow={true} item={item}></WsItem>
+    <View style={{ width: '50%', padding: 5 }}>
+        <WsItem style={{ width: '100%', backgroundColor: colors.white, borderWidth: 0, borderRadius: 5 }} navigation={navigation} showFollow={true} item={item}></WsItem>
     </View>
 )
 
+const mapStateToProps = state => {
+    return {
+        shop_id: state.shopReducer.shop_id
+    }
+}
+
+export default connect(mapStateToProps)(ShopDiscountItemsScreen);
 const styles = StyleSheet.create({
     container: {
         flex: 1,

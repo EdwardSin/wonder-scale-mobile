@@ -3,10 +3,11 @@ import colors from 'assets/variables/colors';
 import { LoadingSpinner } from 'components/modals/ws-modals';
 import { Constants } from 'expo';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { AsyncStorage, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ListItem } from 'react-native-elements';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
+import * as AuthUser from 'services/http/public/auth';
 
 class ProfileScreen extends React.Component {
   constructor(props) {
@@ -14,8 +15,8 @@ class ProfileScreen extends React.Component {
     this.state = {
       loading: true,
       list: [{ name: 'Vouchers', icon: { name: 'ios-pricetags' }, onPress: this.onVouchersPressed },
-             { name: 'Favorites', icon: { name: 'ios-star' }, onPress: this.onFavoritesPressed },
-             { name: 'Settings', icon: { name: 'ios-settings' }, onPress: this.onSettingsPressed }]
+      { name: 'Favorites', icon: { name: 'ios-star' }, onPress: this.onFavoritesPressed },
+      { name: 'Settings', icon: { name: 'ios-settings' }, onPress: this.onSettingsPressed }]
     };
   }
   componentDidMount() {
@@ -23,8 +24,8 @@ class ProfileScreen extends React.Component {
   }
   render() {
     return this.state.loading ? (<LoadingSpinner />) : (
-        <UserProfileContainer user={this.props.user} list={this.state.list} onProfilePressed={this.onProfilePressed} />
-      );
+      <UserProfileContainer user={this.props.user} list={this.state.list} onProfilePressed={this.onProfilePressed} />
+    );
   }
   // #region Events
   onSettingsPressed = () => {
@@ -46,23 +47,26 @@ class ProfileScreen extends React.Component {
       this.setState({ loading: false });
     }
     else {
+      AsyncStorage.removeItem(AuthUser.WS_Token);
       this.props.navigation.navigate("Login");
     }
   };
 }
 
-const ProfileContainer = ({ user, onPress }) => (
-  <TouchableOpacity activeOpacity={.7} onPress={onPress}>
-    <View style={styles.profileContainer}>
-      <Image style={styles.profileImage} defaultSource={require('' + '../../../../assets/uploads/profile.png')} source={{ uri: user.profile_image }} />
-      <View style={{ justifyContent: 'center' }}>
-        <Text style={{ fontSize: 30, textAlign: 'center' }}>{user.first_name}{'\n'}
-          <Text style={{ fontSize: 15 }}>View and edit profile</Text>
-        </Text>
+const ProfileContainer = ({ user, onPress }) => {
+  return (
+    <TouchableOpacity activeOpacity={.7} onPress={onPress}>
+      <View style={styles.profileContainer}>
+        <Image style={styles.profileImage} defaultSource={require('' + '../../../../assets/upload/profile.png')} source={{ uri: user.profile_image }} />
+        <View style={{ justifyContent: 'center' }}>
+          <Text style={{ fontSize: 30, textAlign: 'center' }}>{user.first_name}{'\n'}
+            <Text style={{ fontSize: 15 }}>View and edit profile</Text>
+          </Text>
+        </View>
       </View>
-    </View>
-  </TouchableOpacity>
-)
+    </TouchableOpacity>
+  )
+}
 
 const SettingContainer = ({ list }) => (
   list.map((item, i) => (<ListItem key={i}

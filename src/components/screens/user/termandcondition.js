@@ -26,7 +26,7 @@ export default class TermAndConditionScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <Text style={styles.text}>{this.getTermAndCondition('../../assets/uploads')}</Text>
+                <Text style={styles.text}>{this.getTermAndCondition('../../assets/upload')}</Text>
             </View>
         );
     }

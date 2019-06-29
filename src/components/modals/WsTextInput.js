@@ -12,10 +12,9 @@ export default class WsTextInput extends React.Component {
   }
   render() {
     return (
-      <View  {...this.props} style={[styles.container, this.props.style]}>
-        <Text>{this.props.title}</Text>
-        <TextInput {...this.props.textInput} underlineColorAndroid='transparent' style={[styles.textInput]} onBlur={this.onBlur} onFocus={this.onFocus} />
-        <Text style={styles.errorText}>{this.props.errorText}</Text>
+      <View style={[styles.container, this.props.containerStyle]}>
+        <TextInput {...this.props} underlineColorAndroid='transparent' clearButtonMode={'always'} style={[styles.textInput]} onBlur={this.onBlur} onFocus={this.onFocus} />
+        {this.props.errorText == '' && <Text style={styles.errorText}>{this.props.errorText}</Text>}
       </View>
     );
   }
@@ -33,13 +32,15 @@ export default class WsTextInput extends React.Component {
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%'
+    width: '100%',
+    marginBottom: 15
   },
   textInput: {
     fontSize: 18,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderColor: colors.greyLighten2
+    backgroundColor: colors.greyLighten3,
+    paddingHorizontal: 15,
+    paddingVertical: 18,
+    borderRadius: 5,
   },
   iconStyle: {
     position: 'absolute',

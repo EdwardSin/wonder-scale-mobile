@@ -1,12 +1,11 @@
 import * as VoucherAction from 'actions/voucher-reducer.action';
-import colors from 'assets/variables/colors';
 import { EmptyList, LoadingSpinner, WsRefreshControl, WsSearchbar, WsVoucherCard } from 'components/modals/ws-modals';
 import * as _ from 'lodash';
 import React from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getUserAvailableClaimedVouchers } from 'services/auth-user/voucher';
+import { getUserAvailableClaimedVouchers } from 'services/http/auth-user/voucher';
 
 
 class AvailableClaimedVoucherScreen extends React.Component {
@@ -41,7 +40,7 @@ class AvailableClaimedVoucherScreen extends React.Component {
     render() {
         return this.state.loading ? <LoadingSpinner /> : (
             <View style={styles.container}>
-                <View style={{ paddingVertical: 20, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
+                <View style={{ marginTop: 10 }}>
                     <WsSearchbar placeholder={'Search shop name...'} loading={this.state.loading} onChangeText={this.onChangeText} />
                 </View>
                 <FlatList data={this.state.searchVouchers}

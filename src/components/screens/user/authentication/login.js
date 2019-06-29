@@ -2,17 +2,17 @@ import * as ToastAction from 'actions/toast-reducer.action';
 import * as UserAction from 'actions/user-reducer.action';
 import colors from 'assets/variables/colors';
 import { WsButton, WsTextInput } from 'components/modals/ws-modals';
-import EmailValidator from 'components/validators/email';
 import environments from 'environments/environment';
 import { Facebook, Google } from 'expo';
 import React from 'react';
-import { AsyncStorage, Image, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { AsyncStorage, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Divider } from 'react-native-elements';
 import { NavigationActions, StackActions } from 'react-navigation';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { WS_Token, onSignIn } from 'services/auth';
-import { addUserByFb, addUserByGoogle } from 'services/users';
+import { onSignIn, WS_Token } from 'services/http/public/auth';
+import { addUserByFb, addUserByGoogle } from 'services/http/public/users';
+import EmailValidator from 'validators/email';
 
 class LoginScreen extends React.Component {
   constructor(props) {
@@ -26,34 +26,31 @@ class LoginScreen extends React.Component {
   }
 
   render() {
-    StatusBar.setBarStyle('dark-content', true);
     return (
       <View style={styles.container}>
         <ScrollView style={{ width: '100%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
-          <View style={{ marginBottom: 20, flexDirection:'row', justifyContent: 'center', alignItems: 'flex-end' }}>
-            <Image style={{ width: 60, height: 60 }} source={require('' + 'assets/icons/icon-front.png')}/>
+          <View style={{ marginBottom: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end' }}>
+            <Image style={{ width: 60, height: 60 }} source={require('' + 'assets/icons/icon-front.png')} />
             <Text style={styles.loginText}>Wonder Scale</Text>
           </View>
           <View style={{ paddingHorizontal: '10%', width: '100%' }}>
-            <WsTextInput title={'Email'} textInput={{ onChangeText: this.onEmailChanged, keyboardType: "email-address", value: this.state.email }}
-            />
-            <WsTextInput title={'Password'} textInput={{ onChangeText: this.onPasswordChanged, secureTextEntry: true, value: this.state.password }} />
+            <WsTextInput placeholder={'Email'} keyboardType={'email-address'} onChangeText={this.onEmailChanged} value={this.state.email} />
+            <WsTextInput placeholder={'Password'} onChangeText={this.onPasswordChanged} secureTextEntry={true} value={this.state.password} />
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.text} onPress={this.onPressForgotPassword}>Forgot Password?</Text>
             <Text style={styles.text} onPress={this.onPressSignUp}>Sign-up</Text>
           </View>
-          <WsButton icon={{ name: 'sign-in' , color: colors.white}} style={[styles.button, { marginBottom: 10 }]} disabled={this.state.loading} onPress={this.onPressLogin}>Login</WsButton>
+          <WsButton icon={{ name: 'sign-in', color: colors.white }} style={[styles.button, { marginBottom: 10 }]} disabled={this.state.loading} onPress={this.onPressLogin}>Login</WsButton>
           <View style={{ width: '100%', paddingHorizontal: '10%' }}>
             <Divider style={{ backgroundColor: colors.greyLighten1, width: '100%', marginVertical: 10 }} />
           </View>
-          <WsButton icon={{ name: 'facebook' , color: colors.white}} style={[styles.button, {marginVertical: 10, backgroundColor: colors.facebookColor }]} onPress={this.onPressFBLogin}>Log in with Facebook</WsButton>
-          <WsButton icon={{ name: 'google-plus', color: colors.white}} textColor={colors.white}  style={[styles.button, { marginBottom: 10, backgroundColor: colors.googleColor }]} onPress={this.onPressGoogleLogin}>Log in with Google</WsButton>
+          <WsButton icon={{ name: 'facebook', color: colors.white }} style={[styles.button, { marginVertical: 10, backgroundColor: colors.facebookColor }]} onPress={this.onPressFBLogin}>Log in with Facebook</WsButton>
+          <WsButton icon={{ name: 'google-plus', color: colors.white }} textColor={colors.white} style={[styles.button, { marginBottom: 10, backgroundColor: colors.googleColor }]} onPress={this.onPressGoogleLogin}>Log in with Google</WsButton>
         </ScrollView>
       </View>
     );
   }
-
   // #region Events
   onEmailChanged = (email) => {
     this.setState({ email: email });
@@ -76,8 +73,8 @@ class LoginScreen extends React.Component {
         };
         addUserByFb(user, this.loginSuccessCallback.bind(this), this.loginFailCallback.bind(this))
       }
-      else{
-        this.setState({ loading: false});
+      else {
+        this.setState({ loading: false });
       }
     }
     catch (err) {
@@ -93,7 +90,6 @@ class LoginScreen extends React.Component {
         scopes: ['profile', 'email'],
         behavior: 'web'
       })
-      console.log(result);
       if (result.type === 'success') {
         let user = {
           first_name: result.user.givenName,
@@ -104,9 +100,10 @@ class LoginScreen extends React.Component {
         }
         addUserByGoogle(user, this.loginSuccessCallback.bind(this), this.loginFailCallback.bind(this));
       }
-      
+      else {
+        this.setState({ loading: false });
+      }
     } catch (err) {
-      console.log(err);
       this.props.onToast(err);
     }
   }
@@ -125,19 +122,20 @@ class LoginScreen extends React.Component {
       onSignIn(this.state.email, this.state.password, this.loginSuccessCallback.bind(this), this.loginFailCallback.bind(this))
     }
   }
-  loginSuccessCallback(result){
+  loginSuccessCallback(result) {
     this.setState({ loading: false });
-    if(result.result){
-      AsyncStorage.setItem(WS_Token, result.token);
-      this.props.navigation.dispatch(this.resetActions);
-    }
-    else{
-      this.props.onToast(result.message);
-    }
+    this.props.updateUser(result.user);
+    AsyncStorage.setItem(WS_Token, result.token);
+    this.props.navigation.dispatch(this.resetActions);
   }
-  loginFailCallback(err){
+  loginFailCallback(err) {
     err = JSON.parse(err);
-    this.props.onToast(err);
+    if (err && err.message) {
+      this.props.onToast(err.message);
+    }
+    else {
+      this.props.onToast('Server Error! Try again later');
+    }
     this.setState({ loading: false });
   }
   resetActions = StackActions.reset({
@@ -158,7 +156,7 @@ class LoginScreen extends React.Component {
 
 
 const mapStateToProps = state => {
-  return { };
+  return {};
 }
 const mapDispatchToProps = dispatch => {
   return bindActionCreators({ ...ToastAction, ...UserAction }, dispatch);
@@ -175,7 +173,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   button: {
-    marginHorizontal: 30
+    marginHorizontal: '10%'
   },
   loginText: {
     fontSize: 30,

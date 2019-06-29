@@ -1,7 +1,7 @@
-import React from 'react';
-import { Dimensions, Modal, StyleSheet, Text, View, Button, Image } from 'react-native';
-import { ImagePicker, Permissions } from 'expo';
 import colors from 'assets/variables/colors';
+import { ImagePicker, Permissions } from 'expo';
+import React from 'react';
+import { Button, Dimensions, Image, Modal, StyleSheet, Text, View } from 'react-native';
 const { width } = Dimensions.get('window');
 
 export default class CameraRollModal extends React.Component {
@@ -28,7 +28,7 @@ export default class CameraRollModal extends React.Component {
             return <Text>No access to camera</Text>;
         } else {
             return (
-                <Modal {...this.props} visible={visible} animationType={'slide'} transparent={true}>
+                <Modal onRequestClose={() => { }} {...this.props} visible={visible} animationType={'slide'} transparent={true}>
                     <View style={{ flex: 1, backgroundColor: colors.white }}>
                         <Text onPress={this.props.onPressModalClose} style={{ fontSize: 30 }}>Cancel</Text>
                         <Button title="Pick an image from camera roll" onPress={this._pickImage} />

@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import colors from 'assets/variables/colors';
 import { LoadingScreen, PictureSelect, Title, WsDateTimePicker, WsPicker, WsTextInput } from 'components/modals/ws-modals';
 import { ImagePicker, Permissions } from 'expo';
@@ -5,8 +6,7 @@ import Moment from 'moment';
 import React from 'react';
 import { Alert, Animated, Dimensions, Image, ImageEditor, Keyboard, Linking, Platform, StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-import { editUserInfo, getUser } from 'services/auth-user/auth-user';
-import { Feather } from '@expo/vector-icons';
+import { editGeneralUrl, getUser } from 'services/http/auth-user/auth-user';
 
 export default class EditProfileScreen extends React.Component {
     genders = [{ label: 'Select Gender', value: '' }, { label: 'Male', value: 'male' }, { label: 'Female', value: 'female' }];
@@ -70,22 +70,23 @@ export default class EditProfileScreen extends React.Component {
                 </View>
                 <KeyboardAwareScrollView extraHeight={150}>
                     <View style={{ position: 'relative', height: 300, flex: 1, backgroundColor: colors.greyLighten4 }}>
-                    <Feather onPress={() => this.onPressSelect(!this.state.selectVisible)} style={styles.iconStyle} name="camera" size={35} color={colors.white} />
+                        <Feather onPress={() => this.onPressSelect(!this.state.selectVisible)} style={styles.iconStyle} name="camera" size={35} color={colors.white} />
                         {this.state.uploadImage && <Image style={{ height: 300, width: 300, alignSelf: 'center', resizeMode: 'contain' }} source={{ uri: this.state.uploadImage }} />}
-                        
+
                     </View>
                     <View style={{ padding: 20, marginBottom: 50 }}>
-                        <WsTextInput style={{ marginBottom: 20 }} title={'Email'} textInput={{ placeholder: 'Enter your email', defaultValue: this.state.user.email, editable: false, selectTextOnFocus: false }} errorText={this.state.emailError} />
-                        <WsTextInput style={{ marginBottom: 20 }} title={'First Name'} textInput={{ onChangeText: this.onFirstNameChanged, placeholder: 'Enter your first name', defaultValue: this.state.firstName }} errorText={this.state.firstNameError} />
-                        <WsTextInput style={{ marginBottom: 20 }} title={'Last Name'} textInput={{ onChangeText: this.onLastNameChanged, placeholder: 'Enter your last name', defaultValue: this.state.lastName }} errorText={this.state.lastNameError} />
-                        <WsTextInput style={{ marginBottom: 20 }} title={'Tel'} textInput={{ onChangeText: this.onTelChanged, placeholder: 'Enter your tel', defaultValue: this.state.tel }} errorText={this.state.telError} />
+                        <WsTextInput style={{ marginBottom: 20 }} placeholder={'Enter your email'} defaultValue={this.state.user.email} editable={false} selectTextOnFocus={false} errorText={this.state.emailError} />
+                        <WsTextInput style={{ marginBottom: 20 }} onChangeText={this.onFirstNameChanged} placeholder={'Enter your first name'} defaultValue={this.state.firstName} errorText={this.state.firstNameError} />
+                        <WsTextInput style={{ marginBottom: 20 }} onChangeText={this.onLastNameChanged} placeholder={'Enter your last name'} defaultValue={this.state.lastName} errorText={this.state.lastNameError} />
+                        <WsTextInput style={{ marginBottom: 20 }} onChangeText={this.onTelChanged} placeholder={'Enter your tel'} defaultValue={this.state.tel} errorText={this.state.telError} />
                         <WsPicker style={{ marginBottom: 20 }} title={'Gender'} onValueChange={this.onGenderValueChange} value={this.state.gender} customStyles={{ btnCancel: { color: colors.main } }} items={this.genders} />
-                        <WsDateTimePicker style={{ marginBottom: 20 }} date={this.state.dateOfBirth} 
+                        <WsDateTimePicker style={{ marginBottom: 20 }} date={this.state.dateOfBirth}
                             onDateChanged={this.onDateChanged} title={'Birthday'} errorText={this.state.dateOfBirthError} />
                     </View>
                 </KeyboardAwareScrollView>
             </Animated.View>
             <PictureSelect visible={this.state.selectVisible}
+                onRequestClose={() => { }}
                 onPressUpload={this.onPressUpload}
                 onPressCameraRoll={this.onPressCameraRoll}
                 onPressModalClose={this.onPressSelectClose} />
@@ -185,7 +186,7 @@ export default class EditProfileScreen extends React.Component {
         Keyboard.dismiss();
         this.setState({ editLoading: true });
         if (this.isValidated(user)) {
-            editUserInfo(user, (result) => {
+            editGeneralUrl(user, (result) => {
                 this.setState({ editLoading: false }, () => {
                     if (result && result.message) {
                         this.setState({ callbackMessage: result.message });

@@ -5,7 +5,7 @@ import React from 'react';
 import { AsyncStorage, ScrollView, StyleSheet, View } from 'react-native';
 import { ListItem } from 'react-native-elements';
 import { NavigationActions, StackActions } from 'react-navigation';
-import { onSignOut } from 'services/auth';
+import { onSignOut } from 'services/http/public/auth';
 export const WS_Currency = "ws-currency";
 
 export default class SettingsScreen extends React.Component {

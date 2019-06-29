@@ -8,7 +8,7 @@ import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'r
 import { Divider } from 'react-native-elements';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getRecruitmentById } from 'services/recruitment';
+import { getRecruitmentById } from 'services/http/public/recruitment';
 
 
 const currency = new Currency();
@@ -62,7 +62,7 @@ class RecruitmentDetailScreen extends React.Component {
                             </View>
                         </View>
                     </ScrollView>
-                    <BottomButton onPress={() => {this.navigateToShop(this.state.recruitment.shop_id)}}>Enter To Shop</BottomButton>
+                    <BottomButton onPress={() => { this.navigateToShop(this.state.recruitment.shop_id) }}>Enter To Shop</BottomButton>
                 </View>)
         );
     }
@@ -79,7 +79,6 @@ class RecruitmentDetailScreen extends React.Component {
         })
     }
     navigateToShop(shop_id) {
-        console.log('here');
         this.props.onSelectedShopId(shop_id);
         this.props.navigation.navigate("FrontShop");
     }

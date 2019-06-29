@@ -6,7 +6,7 @@ import React from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getAllPublicItemsByShopId, getPublicDiscountItemsByShopId, getPublicNewItemsByShopId } from 'services/items';
+import { getAllPublicItemsByShopId, getPublicDiscountItemsByShopId, getPublicNewItemsByShopId } from 'services/http/public/items';
 class ShopAllItemsScreen extends React.Component {
   flatListRef;
   constructor(props) {
@@ -32,7 +32,7 @@ class ShopAllItemsScreen extends React.Component {
       this.state.loading ? <LoadingSpinner /> :
         (<View style={styles.container}>
           <WsStatusBar />
-          <View style={{ marginHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
+          <View style={{ marginTop: 10, paddingHorizontal: 10 }}>
             <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Item'} />
           </View>
           <CustomOrderBar
@@ -44,6 +44,7 @@ class ShopAllItemsScreen extends React.Component {
             numColumns={2}
             keyExtractor={(item) => item._id}
             ref={(ref) => this.flatListRef = ref}
+            style={{ backgroundColor: colors.greyLighten3, padding: 5 }}
             ListEmptyComponent={<EmptyList />}
             refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh.bind(this)} />}
             renderItem={({ item, index }) => (<ContentContainer index={index} item={item} navigation={this.props.navigation} />)} />
@@ -147,7 +148,7 @@ const OrderItem = ({ onPress, label, value, selected }) => (
   </TouchableOpacity>
 )
 const CustomOrderBar = ({ onPress, onNewItemsPress, onDiscountPress, isSelected }) => (
-  <View style={{ justifyContent: 'center', padding: 10 }}>
+  <View style={{ justifyContent: 'center', paddingVertical: 10 }}>
     <ScrollView contentContainerStyle={{ justifyContent: 'center', alignItems: 'center', height: 30 }} showsHorizontalScrollIndicator={false} horizontal={true}>
       <OrderItem onPress={() => onPress('thebest')} label={'The Best'} value={'thebest'} selected={isSelected} />
       <OrderItem onPress={() => onNewItemsPress()} label={'New'} value={'new'} selected={isSelected} />
@@ -167,8 +168,9 @@ const CustomOrderBar = ({ onPress, onNewItemsPress, onDiscountPress, isSelected 
 )
 
 const ContentContainer = ({ item, navigation, index }) => (
-  <View style={{ width: '50%' }}>
-    <WsItem style={{ borderLeftWidth: index % 2 ? 0 : 1, borderTopWidth: index > 1 ? 0 : 1 }} navigation={navigation} showFollow={true} item={item}></WsItem>
+  <View style={{ width: '50%', padding: 5 }}>
+    <WsItem navigation={navigation} key={index} item={item}
+      style={{ width: '100%', backgroundColor: colors.white, borderWidth: 0, borderRadius: 5 }}></WsItem>
   </View>
 )
 
@@ -184,7 +186,6 @@ export default connect(mapStateToProps, mapDispatchToProps)(ShopAllItemsScreen);
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: colors.white
+    flex: 1
   },
 });

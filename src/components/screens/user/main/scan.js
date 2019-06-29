@@ -6,7 +6,7 @@ import React from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { claimVoucher } from 'services/auth-user/voucher';
+import { claimVoucher } from 'services/http/auth-user/voucher';
 
 const { width, height } = Dimensions.get('window');
 
@@ -57,61 +57,76 @@ class ScanScreen extends React.Component {
                 // @ts-ignore */}
                 {this.state.isOnFocused && <BarCodeScanner torchMode={this.state.torchMode} onBarCodeScanned={this.barcodeReceived} style={StyleSheet.absoluteFill}>
                     <Caption>Scan QR code</Caption>
-                    <ScanArea isScanned={this.state.isScanned}/>
+                    <ScanArea isScanned={this.state.isScanned} />
                     <WsDropdown visible={this.state.isShopRefConfirm}>
                         {/* 
   // @ts-ignore */}
-                        <DropdownItem style={styles.borderBottom} title={'Enter Shop'} onPress={this.onEnterShopPressed} />
+                        <DropdownItem style={styles.borderBottom} title={'Enter Shop'} onPress={this.onEnterShopPress} />
                         {/* 
   // @ts-ignore */}
-                        <DropdownItem style={styles.borderBottom} title={'View Items'} onPress={this.onViewItemsPressed} />
+                        <DropdownItem style={styles.borderBottom} title={'View Items'} onPress={this.onViewItemsPress} />
                         {/* 
   // @ts-ignore */}
-                        {/* <DropdownItem style={styles.borderBottom} title={'Connect Network'} onPress={this.onConnectNetworkPressed} /> */}
+                        <DropdownItem style={styles.borderBottom} title={'Job Recruitment'} onPress={this.onJobRecruitmentPress} />
                         {/* 
   // @ts-ignore */}
-                        <DropdownItem style={styles.borderBottom} title={'Cancel'} onPress={this.onCancelPressed} />
+                        {/* <DropdownItem style={styles.borderBottom} title={'Connect Network'} onPress={this.onConnectNetworkPress} /> */}
+                        {/* 
+  // @ts-ignore */}
+                        <DropdownItem style={styles.borderBottom} title={'Cancel'} onPress={this.onCancelPress} />
                     </WsDropdown>
                     <WsDropdown visible={this.state.isVoucherClaim}>
                         {/* 
   // @ts-ignore */}
-                        <DropdownItem style={styles.borderBottom} title={'Claim Voucher'} onPress={this.onClaimVoucherPressed} />
+                        <DropdownItem style={styles.borderBottom} title={'Claim Voucher'} onPress={this.onClaimVoucherPress} />
                         {/* 
   // @ts-ignore */}
-                        <DropdownItem style={styles.borderBottom} title={'Cancel'} onPress={this.onCancelPressed} />
+                        <DropdownItem style={styles.borderBottom} title={'Cancel'} onPress={this.onCancelPress} />
                     </WsDropdown>
                 </BarCodeScanner>}
             </View>
         );
     }
     // #region Event
-    onViewItemsPressed = () => {
-        this.props.onSelectedShopId(this.state.shopId);
+    onViewItemsPress = () => {
+        let { shopId } = this.state;
+        this.props.onSelectedShopId(shopId);
         this.props.navigation.navigate("Categories");
         this.setState({ isOnFocused: false });
         setTimeout(() => {
             this.setState({ isScanned: false, isShopRefConfirm: false });
         }, 300);
     }
-    onEnterShopPressed = () => {
-        this.props.onSelectedShopId(this.state.shopId);
+    onEnterShopPress = () => {
+        let { shopId } = this.state;
+        this.props.onSelectedShopId(shopId);
         this.props.navigation.navigate("PublicShop");
         this.setState({ isOnFocused: false });
         setTimeout(() => {
             this.setState({ isScanned: false, isShopRefConfirm: false });
         }, 300);
     }
-    onConnectNetworkPressed = () => {
+    onJobRecruitmentPress = () => {
+        let { shopId } = this.state;
+        this.props.onSelectedShopId(shopId);
+        this.props.navigation.navigate("Recruitment");
+        this.setState({ isOnFocused: false });
+        setTimeout(() => {
+            this.setState({ isScanned: false, isShopRefConfirm: false });
+        }, 300);
+    }
+    onConnectNetworkPress = () => {
 
     }
-    onClaimVoucherPressed = () => {
-        claimVoucher(this.state.voucherId, (result) => {
+    onClaimVoucherPress = () => {
+        let { voucherId } = this.state;
+        claimVoucher(voucherId, (result) => {
             this.setState({
                 isVoucherClaim: false
             })
         })
     }
-    onCancelPressed = () => {
+    onCancelPress = () => {
         this.setState({ isShopRefConfirm: false, isScanned: false, isVoucherClaim: false })
     }
     barcodeReceived = (e) => {
@@ -174,7 +189,7 @@ const DropdownItem = ({ onPress, title }) => (
     </TouchableOpacity>
 )
 
-const ScanArea = ({isScanned }) => (
+const ScanArea = ({ isScanned }) => (
     <View>
         <View style={styles.layerTop} />
         <View style={styles.layerCenter}>

@@ -8,7 +8,7 @@ import { Dimensions, Image, KeyboardAvoidingView, Modal, ScrollView, StyleSheet,
 import { ActivityIndicator } from 'react-native-paper';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getVoucherWithPromotion, redeemVoucher } from 'services/auth-user/voucher';
+import { getVoucherWithPromotion, redeemVoucher } from 'services/http/auth-user/voucher';
 import colors from './../../../../assets/variables/colors';
 const { width, height } = Dimensions.get('window');
 
@@ -47,14 +47,14 @@ class VourchersScreen extends React.Component {
                 <Image style={{ width: '100%', height: '100%', resizeMode: 'contain' }} source={{ uri: 'https://assets.wonderscale.com/' + this.state.item.promotion.profile_image }} />
                 <View style={styles.descriptionContainer}>
                     <Text>{this.state.item.promotion.title}</Text>
-                    <Text style={{marginBottom: 10}}>{this.state.item.promotion.description}</Text>
+                    <Text style={{ marginBottom: 10 }}>{this.state.item.promotion.description}</Text>
                     <Text>Valid from{' '}
                         <Text style={{ color: colors.green, paddingHorizontal: 5 }}>{moment(this.state.item.valid_from).format('DD MMM YYYY')}</Text>
                         {' '}to{' '}
                         <Text style={{ color: colors.green, paddingHorizontal: 5 }}>{moment(this.state.item.valid_to).format('DD MMM YYYY')}</Text>
                     </Text>
                     {this.state.item.redemption_date && <Text>Used: {moment(this.state.item.redemption_date).format('DD MMM YYYY')}</Text>}
-                    {!this.state.item.redemption_date && <Text>Status: <Text style={{ color: 'red'}}>Expired</Text></Text>}
+                    {!this.state.item.redemption_date && <Text>Status: <Text style={{ color: 'red' }}>Expired</Text></Text>}
                     {this.state.item.promotion && this.state.item.promotion.is_term_and_condition && <Text style={{ color: '#0000FF' }} onPress={() => { this.setState({ termAndConditionModalVisible: true }) }}>Term and Condition</Text>}
                     <View style={{ marginBottom: 20 }}></View>
                     {this.state.item.valid &&
@@ -64,7 +64,7 @@ class VourchersScreen extends React.Component {
                     <WsButton backgroundColor={'red'} style={{ marginBottom: 10 }} onPress={() => { this.props.navigation.goBack() }}>Cancel</WsButton>
                 </View>
 
-                <Modal visible={this.state.redeemModalVisible} animationType={'fade'}>
+                <Modal onRequestClose={() => { }} visible={this.state.redeemModalVisible} animationType={'fade'}>
                     <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'center', padding: 20 }} enabled behavior={'padding'}>
                         <Text style={{ color: '#888', marginBottom: 30 }}>To redeem the voucher, please ask the seller to enter the security code.</Text>
                         <WsTextInput value={this.state.secret_code} textInput={{ placeholder: 'Security Code:', onChangeText: (text) => { this.setState({ secret_code: text }) } }} />
@@ -76,13 +76,13 @@ class VourchersScreen extends React.Component {
                             })
                         }}>{'Redeem'}</WsButton>
                         <WsButton style={{ marginBottom: 40 }} onPress={() => { this.setState({ redeemModalVisible: false }) }}>{'Cancel'}</WsButton>
-                        <View  style={{ backgroundColor: 'rgba(255,255,255,.8)', width, height, position: 'absolute', top: 0, left: 0, display: this.state.isRedeem? 'flex': 'none' }}>
+                        <View style={{ backgroundColor: 'rgba(255,255,255,.8)', width, height, position: 'absolute', top: 0, left: 0, display: this.state.isRedeem ? 'flex' : 'none' }}>
                             <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                                 {this.state.redeemLoading ? <ActivityIndicator size={'large'} color={'#222'} /> :
                                     (
                                         <TouchableOpacity onPress={this.onRedeemDonePressed}>
                                             <View>
-                                                <Ionicons style={{color: '#00cc00'}} size={80} name={'ios-checkmark-circle-outline'} />
+                                                <Ionicons style={{ color: '#00cc00' }} size={80} name={'ios-checkmark-circle-outline'} />
                                                 <Text style={{ color: '#00cc00', fontSize: 30 }}>Done</Text>
                                             </View>
                                         </TouchableOpacity>)
@@ -91,7 +91,7 @@ class VourchersScreen extends React.Component {
                         </View>
                     </KeyboardAvoidingView>
                 </Modal>
-                <Modal visible={this.state.termAndConditionModalVisible} animationType={'fade'} >
+                <Modal onRequestClose={() => { }} visible={this.state.termAndConditionModalVisible} animationType={'fade'} >
                     <ScrollView style={{ flex: 1, padding: 30 }}>
                         <WsStatusBar />
                         <Text>
@@ -141,7 +141,7 @@ class VourchersScreen extends React.Component {
         })
     }
     onRedeemVoucherPressed = (obj) => {
-        this.setState({isRedeem: true, redeemLoading: true })
+        this.setState({ isRedeem: true, redeemLoading: true })
         redeemVoucher(obj, (result) => {
             this.setState({ redeemLoading: false }, () => {
                 this.props.onVoucherRedeemed();
@@ -151,7 +151,7 @@ class VourchersScreen extends React.Component {
     }
 
     onRedeemDonePressed = (obj) => {
-        this.setState({ isRedeem: false, redeemModalVisible: false}, () => {
+        this.setState({ isRedeem: false, redeemModalVisible: false }, () => {
             this.props.navigation.goBack();
         });
     }

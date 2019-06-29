@@ -1,173 +1,233 @@
 
+import AntDesign from '@expo/vector-icons/AntDesign';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as MapAction from 'actions/map-reducer.action';
+import * as SearchbarAction from 'actions/searchbar-reducer.action';
+import * as ShopAction from 'actions/shop-reducer.action';
 import * as UserAction from 'actions/user-reducer.action';
 import colors from 'assets/variables/colors';
-import OrderHelper from 'components/helpers/orderhelper';
-import SearchHelper from 'components/helpers/searchhelper';
-import { EmptyList, FilterController, LoadingSpinner, MapIcon, WsCard, WsItem, WsRefreshControl } from 'components/modals/ws-modals';
+import { EmptyList, KeywordSearchbar, LoadingSpinner, MapIcon, WsRefreshControl, WsStatusBar } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
+import StatusHelper from 'helpers/statushelper';
+import _ from 'lodash';
+import DistanceConverter from 'pipes/distance-converter.pipe';
 import React from 'react';
-import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
+import { Image, Linking, SectionList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getNearsShopByPoint } from 'services/shops';
-const { height, width } = Dimensions.get('window');
+import { getShopsBySearchItem, getShopsBySearchText } from 'services/http/public/shops';
+
+let state = { items: [], scrollOffset: 0 };
 
 class SearchScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      items: [],
-      displayItems: [],
-      loading: false,
+      searchShopsByName: props.searchShopsByName,
+      searchShopsByItems: props.searchShopsByItems,
       refreshing: false,
-      displayView: 'block',
-      text: '',
-      shops: []
+      searchMoreLoading: true,
+      hasMore: true,
+      searchTriggerState: true
     };
-    
   }
   componentDidMount() {
-    this.getCurrentPosition();
-    //this.getUser();
-  }
-  // getUser = () => {
-  //   this.setState({ loading: true });
-  //   getBlackListWithUser((result) => {
-  //     this.props.updateUser(result);
-  //     this.setState({ user: result, loading: false });
-  //   }, (err) => {
-  //     this.setState({ loading: false });
-  //     // onSignOut().then(result => {
-  //     //   this.props.navigation.navigate('Login');
-  //     // });
-  //   })
-  // };
-  renderShop = ({ item }) => (
-    <View style={{ padding: 3, width: '50%' }}>
-      <WsCard onPress={() => {this.navigateToShop(item._id)}} item={item} >{item.name}</WsCard>
-    </View>
-  );
-  renderItem = ({ item }) => (
-    <View style={{ padding: 3, width: '50%' }}>
-      <WsItem navigation={this.props.navigation} showFollow={true} follow={item.follow} showSeller={true} item={item} />
-    </View>
-  );
 
-  renderContentContainer = () => {
-    return this.state.loading ? (<LoadingSpinner />) : (
-      <FlatList data={this.state.displayItems} numColumns={2} keyExtractor={(item, index) => item._id}
-        ListEmptyComponent={<EmptyList />}
-        style={{ zIndex: 3 }}
-        refreshControl={<WsRefreshControl onRefresh={this.handleRefresh.bind(this)} refreshing={this.state.refreshing} />}
-        renderItem={this.renderItem} />
-    )
   }
-  
-  navigateToShop = (shopId) => {
-    this.props.navigation.navigate("FrontShop", { shopId: shopId });
+  componentWillUpdate(nextProps) {
+    let { currentLatitude, searchLatitude } = this.props.mapSetting;
+    if (searchLatitude == 0 && nextProps.mapSetting.searchLatitude > 0) {
+      this.setState({ searchTriggerState: true });
+    }
+  }
+  componentDidUpdate(prevProps) {
+    let { searchShopsByItems, searchShopsByName, searchTrigger } = this.props;
+    let { searchTriggerState } = this.state;
+
+    if (searchTriggerState || searchTrigger) {
+      this.setState({ searchShopsByItems: [], searchShopsByName: [] }, () => {
+        this.retrieveShopsBySearchName();
+        this.retrieveShopsBySearchItems();
+        this.stopLoading();
+        this.props.isSearchTriggered(false);
+        this.setState({ searchTriggerState: false });
+      });
+    }
+    if (searchShopsByItems != prevProps.searchShopsByItems ||
+      searchShopsByName != prevProps.searchShopsByName) {
+      this.setState({ searchShopsByItems, searchShopsByName });
+    }
+
+  }
+
+  renderSearchResults() {
+    let { refreshing, searchMoreLoading, hasMore } = this.state;
+    return (<View style={{ width: '100%', height: '100%', zIndex: 9 }}>
+      <SectionList
+        stickySectionHeadersEnabled={false}
+        renderItem={({ item, index, section }) => this.renderShopCard({ item, index, section })}
+        ListEmptyComponent={!searchMoreLoading && !refreshing && <EmptyList />}
+        ListFooterComponent={(searchMoreLoading || refreshing) && <LoadingSpinner style={{ backgroundColor: 'transparent', paddingVertical: 40 }} />}
+        renderSectionHeader={({ section: { title } }) => (<Text style={{ paddingHorizontal: 15, paddingVertical: 5, paddingTop: 10, color: colors.grey }}>{title}</Text>)}
+        sections={this.getSections()}
+        keyExtractor={(item, index) => item + index}
+        onEndReached={() => {
+          if (hasMore) {
+            this.setState({ searchMoreLoading: true });
+            this.retrieveShopsBySearchItems();
+            this.stopLoading();
+          }
+        }}
+        onEndReachedThreshold={.7}
+        refreshControl={<WsRefreshControl refreshing={refreshing} onRefresh={this.handleRefresh.bind(this)} />}
+      >
+      </SectionList>
+    </View>)
+  }
+
+  getSections() {
+    let arr = [];
+    let { searchShopsByName, searchShopsByItems } = this.state;
+
+    if (searchShopsByName.length > 0) {
+      arr.push({ index: 'shop', title: 'Search by shops\' name', data: searchShopsByName })
+    }
+    if (searchShopsByItems.length > 0) {
+      arr.push({ index: 'item', title: 'Search by items\' name', data: searchShopsByItems });
+    }
+    return arr;
+  }
+
+  getOpeningInfo = (shop) => {
+    let opening_info_type = shop.opening_info_type;
+    let opening_info = shop.opening_info;
+    let today = new Date().getDay();
+    return StatusHelper.isCurrentlyOpen(opening_info_type, opening_info, today);
+  }
+  renderShopCard = ({ item, index, section }) => {
+    let shop = item;
+    let isCurrentlyOpen = this.getOpeningInfo(shop);
+    let url = shop.profile_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + shop.profile_image : shop.profile_image;
+    return (<View key={index} style={{ flexDirection: 'row', paddingVertical: 5, paddingHorizontal: 10 }}>
+      <TouchableOpacity onPress={() => this.navigateToFrontShop(shop)} activeOpacity={.5} style={{ flexDirection: 'row', flex: 1 }}>
+        <View style={{
+          alignSelf: 'center', width: 80, height: 80, borderRadius: 40, backgroundColor: colors.white, zIndex: 10,
+          shadowColor: colors.grey, shadowOpacity: 1, shadowOffset: { width: 1, height: 1 }
+        }}>
+          <Image style={{ width: 80, height: 80, resizeMode: 'contain', overflow: 'hidden', borderRadius: 40 }} defaultSource={environments.Image.Default_Shop} source={{ uri: url }} />
+        </View>
+        <View style={{ height: 93, marginLeft: -15, flex: 1, flexDirection: 'row', backgroundColor: colors.greyLighten4, borderRadius: 10, overflow: 'hidden' }}>
+          <View style={{ flex: 1, paddingRight: 15, paddingLeft: 25, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 17 }} numberOfLines={1} ellipsizeMode={'tail'}>{shop.name}</Text>
+            <OpeningInfoTag label={isCurrentlyOpen ? 'Opening' : 'Closed'} isOpen={isCurrentlyOpen} />
+            <View style={{ marginTop: 5, flexDirection: 'row' }}>
+              {_.times(shop.rating, (i) => (<AntDesign key={i} style={{ width: 14 }} size={14} name={'star'} color={colors.main} />))}
+              {_.times(5 - shop.rating, (i) => (<AntDesign key={i} style={{ width: 14 }} size={14} name={'staro'} color={colors.secondary} />))}
+              {shop.review && shop.review.count > 0 && <Text style={{ paddingLeft: 5 }}>({shop.review.count} reviews)</Text>}
+            </View>
+          </View>
+          <View style={{ width: 85, alignItems: 'center', justifyContent: 'center' }}>
+            <TouchableOpacity style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.secondary, flex: 1, width: '100%', justifyContent: 'center' }}
+              onPress={() => {
+                Linking.openURL(`http://www.google.com/maps/place/${shop.location.coordinates[1]},${shop.location.coordinates[0]}`)
+              }}>
+              <View style={{ justifyContent: 'center', alignItems: 'center', flexDirection: section.index == 'item' ? 'row' : 'column', paddingHorizontal: 5 }}>
+                <Text style={{ color: colors.white }} numberOfLines={1}>{DistanceConverter.transform(shop.dist)}</Text>
+                <MaterialCommunityIcons name={'map-marker'} size={20} color={colors.white} style={{ paddingLeft: 5 }} />
+              </View>
+            </TouchableOpacity>
+            {section.index == 'item' &&
+              <TouchableOpacity style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.main, flex: 1, width: '100%', justifyContent: 'center' }}
+                onPress={() => {
+                  this.props.onSelectedShopId(shop._id);
+                  this.props.navigation.navigate("Categories");
+                }}>
+                <Text style={{ color: colors.white, textAlign: 'center' }}>View Item</Text>
+              </TouchableOpacity>
+            }
+          </View>
+        </View>
+      </TouchableOpacity>
+    </View>)
+  }
+  navigateToFrontShop(shop) {
+    this.props.onSelectedShopId(shop._id);
+    this.props.navigation.navigate('FrontShop');
+  }
+  navigateToMapView(shops) {
+    this.props.navigation.navigate('MapView');
   }
   render() {
+    let { searchShopsByName, searchShopsByItems } = this.state;
     return (
-      <View style={{ flex: 1 }}>
-        <View style={styles.container}>
-          {this.renderContentContainer()}
-          <View style={{ alignItems: 'center', paddingVertical: 25 }}>
-            <FilterController navigation={this.props.navigation} />
-          </View>
-          <MapIcon onPress={() => { this.props.navigation.navigate('MapModal'); }} />
-        </View>
+      <View style={styles.container}>
+        <WsStatusBar />
+        <KeywordSearchbar />
+        {this.renderSearchResults()}
+        <MapIcon style={{ zIndex: 10 }} onPress={() => {
+          this.props.onSearchShopsByName(searchShopsByName);
+          this.props.onSearchShopsByItems(searchShopsByItems);
+          this.props.navigation.navigate('MapModal');
+        }} />
       </View>
     );
   }
-  getNearestShop = (longitude, latitude, maxdistance, currentPoint) => {
-    getNearsShopByPoint(longitude, latitude, maxdistance, currentPoint, (result) => {
-      this.getItem();
-      this.props.refreshShops(result);
-      this.props.onMarkersDisplayed({
-        markers: result.result.map(x => {
-          return {
-            _id: x._id,
-            coordinate:
-              {
-                longitude: x.location.coordinates[0],
-                latitude: x.location.coordinates[1]
-              },
-            title: x.name,
-            description: x.description,
-            image: { uri: environments.IMAGE_URL + x.profile_image }
-          }
-        })
-      });
-    })
-  };
-  getCurrentPosition = () => {
-    let {latitudeDelta, longitudeDelta, radius} = this.props.mapSetting;
-    navigator.geolocation.getCurrentPosition(
-      position => {
-        const { coordinate, routeCoordinates } = this.state;
-        const { latitude, longitude } = position.coords;
-        this.setState({ currentPoint: { lat: latitude, lng: longitude }});
-        this.props.onCoordinatesChanged({
-          latitude, longitude,
-          latitudeDelta: latitudeDelta,
-          longitudeDelta: longitudeDelta
-        })
-        this.getNearestShop(longitude, latitude, radius, {lat: latitude, lng: longitude});
-      },
-      error => {
-        alert(error);
-      },
-      { enableHighAccuracy: true, timeout: 20000 }
-    );
-  };
-
-  getItem = () => {
-    let { items } = this.state;
-    let { order, keyword } = this.props;
-
-    if (keyword != '') {
-      let itemKeywordArray = SearchHelper.getKeywordArray(keyword);
-      //items = FilterHelper.itemFilter(items, itemKeywordArray);
-      //items = FilterHelper.filterShopType();
+  async retrieveShopsBySearchItems() {
+    let { searchShopsByItems } = this.state;
+    let { searchKeyword, skip, limit, setResultParams } = this.props;
+    let { searchLatitude, searchLongitude, radius } = this.props.mapSetting;
+    this.setState({ searchMoreLoading: true });
+    let result = await getShopsBySearchItem({ query: searchKeyword, limit: 5, skip, lat: searchLatitude, lng: searchLongitude, radius }, { current_lat: searchLatitude, current_lng: searchLongitude });
+    if (result.result && !result.result.length) {
+      this.setState({ searchMoreLoading: false, hasMore: false });
+      return;
     }
-    items = OrderHelper.orderByAndSetItemList(order, items);
-    this.setState({ displayItems: items, loading: false, refreshing: false });
-
-    //list = FilterHelper.filterItemType(list, type);
-    //list = FilterHelper.filterItemStatus(list, isCurrentShop);
-    //list = GroupHelper.groupItems(list);
-    //this.displayShopOnMapList = GroupHelper.groupByKeywordAndGetKeyValue(list, "seller");
-    //this.refreshMarker(this.mapObj, this.centerSetting);
-    //this.addInfoBubbleListener(this.displayShopOnMapList);
-    //this.loading = false;
-    //this.showRerender = false;
-    //this.setState({ displayItems: list });
-  };
-
+    setResultParams({ skip: skip + result.result.length });
+    this.setState({ searchShopsByItems: [...searchShopsByItems, ...result.result] });
+  }
+  async retrieveShopsBySearchName() {
+    let { searchLatitude, searchLongitude, radius } = this.props.mapSetting;
+    let { searchKeyword } = this.props;
+    this.setState({ searchMoreLoading: true });
+    let result = await getShopsBySearchText({ query: searchKeyword, limit: 3, lat: searchLatitude, lng: searchLongitude, radius });
+    this.setState({ searchShopsByName: result['result'] });
+  }
+  stopLoading() {
+    this.setState({ searchMoreLoading: false, refreshing: false, onSearchDisplayed: true })
+  }
   handleRefresh = () => {
-    let { circleLatitude, circleLongitude, radius } = this.props.mapSetting;
-    this.setState({ refreshing: true, loading: true }, () => {
-      this.getNearestShop(circleLongitude, circleLatitude, radius, this.state.currentPoint);
+    this.setState({ refreshing: true, loading: true, skip: 0, hasMore: true }, () => {
+      this.retrieveShopsBySearchName();
+      this.retrieveShopsBySearchItems();
+      this.stopLoading();
     });
-  };
+  }
 }
+
+const OpeningInfoTag = ({ label, isOpen }) => (
+  <View style={{ backgroundColor: isOpen ? colors.greenLighten1 : colors.red, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, marginVertical: 2, alignSelf: 'flex-start' }}>
+    <Text style={{ fontSize: 14, color: colors.white }}>{label}</Text>
+  </View>
+)
 const mapStateToProps = state => {
   return {
-    mapSetting: state.mapReducer.mapSetting,
-    keywordSearchbar: state.mapReducer.keywordSearchbar,
-    orderbar: state.mapReducer.optionbar,
-    user: state.userReducer.user
+    mapSetting: state.mapReducer,
+    orderbar: state.searchbarReducer.optionbar,
+    searchShopsByItems: state.shopReducer.searchShopsByItems,
+    searchShopsByName: state.shopReducer.searchShopsByName,
+    searchKeyword: state.searchbarReducer.keywordSearchbar.searchKeyword,
+    limit: state.searchbarReducer.keywordSearchbar.limit,
+    skip: state.searchbarReducer.keywordSearchbar.skip,
+    searchTrigger: state.searchbarReducer.searchTrigger
   };
 }
 const mapDispatchToProps = dispatch => {
-  return bindActionCreators({ ...MapAction, ...UserAction }, dispatch);
+  return bindActionCreators({ ...MapAction, ...UserAction, ...ShopAction, ...SearchbarAction }, dispatch);
 }
 export default connect(mapStateToProps, mapDispatchToProps)(SearchScreen);
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: colors.white
+    flex: 1
   }
 });

@@ -1,8 +1,8 @@
 import colors from 'assets/variables/colors';
-import { LatestCard, LoadingSpinner, WsStatusBar, WsRefreshControl, EmptyList } from 'components/modals/ws-modals';
+import { EmptyList, LatestCard, LoadingSpinner, WsRefreshControl, WsStatusBar } from 'components/modals/ws-modals';
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { getNewsFeed } from 'services/auth-user/auth-user';
+import { FlatList, StyleSheet, View } from 'react-native';
+import { getNewsFeed } from 'services/http/auth-user/auth-user';
 
 export default class LatestScreen extends React.Component {
 
@@ -60,7 +60,7 @@ export default class LatestScreen extends React.Component {
       this.getNewsFeed();
     })
   }
-  
+
 }
 
 const styles = StyleSheet.create({

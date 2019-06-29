@@ -4,7 +4,7 @@ import _ from 'lodash';
 import React from 'react';
 import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
-import { getPublicNewItemsByShopId } from 'services/items';
+import { getPublicNewItemsByShopId } from 'services/http/public/items';
 class ShopNewItemsScreen extends React.Component {
   flatListRef;
   constructor(props) {
@@ -28,12 +28,13 @@ class ShopNewItemsScreen extends React.Component {
       this.state.loading ? <LoadingSpinner /> :
         (<View style={styles.container}>
           <WsStatusBar />
-          <View style={{ marginHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
+          <View style={{ marginTop: 10, paddingHorizontal: 10 }}>
             <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Item'} />
           </View>
-          <CustomOrderBar onPress={this.onOrderPress}isSelected={this.state.order}  onNewItemsPress={this.onNewItemsPress}/>
+          <CustomOrderBar onPress={this.onOrderPress} isSelected={this.state.order} onNewItemsPress={this.onNewItemsPress} />
           <FlatList data={this.state.searchItems}
             numColumns={2}
+            style={{ backgroundColor: colors.greyLighten3, padding: 5 }}
             keyExtractor={(item) => item._id}
             ref={(ref) => this.flatListRef = ref}
             ListEmptyComponent={<EmptyList message={'No new item!'} />}
@@ -56,11 +57,11 @@ class ShopNewItemsScreen extends React.Component {
     let items = [];
     this.setState({ loading: true });
     let searchKeyword = this.state.searchKeyword;
-    
-    let searchItems = _.filter(this.state.items, (item) => item.name.toLowerCase().match(searchKeyword.toLowerCase())) || []  
+
+    let searchItems = _.filter(this.state.items, (item) => item.name.toLowerCase().match(searchKeyword.toLowerCase())) || []
     this.flatListRef.scrollToOffset({ animated: true, offset: 0 });
     this.setState({ order: value });
-    
+
     items = this.orderItems(searchItems, value);
     this.setState({ searchItems: items, loading: false });
   }
@@ -80,7 +81,7 @@ class ShopNewItemsScreen extends React.Component {
     this.setState({
       refreshing: true
     }, () => {
-        this.onNewItemsPress();
+      this.onNewItemsPress();
     })
   }
   onNewItemsPress = () => {
@@ -122,8 +123,8 @@ const CustomOrderBar = ({ onPress, onNewItemsPress, isSelected }) => (
 )
 
 const ContentContainer = ({ item, navigation, index }) => (
-  <View style={{ width: '50%' }}>
-    <WsItem style={{ borderLeftWidth: index % 2 ? 0 : 1, borderTopWidth: index > 1 ? 0 : 1 }} navigation={navigation} showFollow={true} item={item}></WsItem>
+  <View style={{ width: '50%', padding: 5 }}>
+    <WsItem style={{ width: '100%', backgroundColor: colors.white, borderWidth: 0, borderRadius: 5 }} navigation={navigation} showFollow={true} item={item}></WsItem>
   </View>
 )
 

@@ -4,10 +4,9 @@ import _ from 'lodash';
 import moment from 'moment';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Divider } from 'react-native-elements';
-import Feather from '@expo/vector-icons/Feather';
-import { removeShopReview } from 'services/auth-user/review';
+import { removeShopReview } from 'services/http/auth-user/review';
 
 export default class ReviewCard extends React.Component {
     static propTypes = {
@@ -88,7 +87,7 @@ export default class ReviewCard extends React.Component {
             [{ text: 'No', onPress: () => { } },
             {
                 text: 'Yes', onPress: () => {
-                    removeShopReview({review_id: this.props.item._id}, (result) => {
+                    removeShopReview({ review_id: this.props.item._id }, (result) => {
                         this.props.removeCallback();
                         // confirm and remove from list
                     })

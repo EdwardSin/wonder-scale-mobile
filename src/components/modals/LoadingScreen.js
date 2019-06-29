@@ -10,8 +10,8 @@ export default class LoadingScreen extends React.Component {
     }
     render() {
         return (
-            <Modal {...this.props} visible={this.props.loading} transparent={true} 
-            onDismiss={this.props.onRequestClose}>
+            <Modal {...this.props} visible={this.props.loading} transparent={true}
+                onDismiss={this.props.onRequestClose} onRequestClose={() => { }}>
                 <View style={styles.modalContainer}>
                     <View style={styles.container}>
                         <View style={[styles.innerContainer]}>

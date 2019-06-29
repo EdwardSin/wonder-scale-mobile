@@ -3,18 +3,18 @@ import * as ToastAction from 'actions/toast-reducer.action';
 import * as UserAction from 'actions/user-reducer.action';
 import colors from 'assets/variables/colors';
 import { Currency } from 'assets/variables/currency';
-import environments from 'environments/environment';
+import * as ImageHelper from 'helpers/image.helper';
 import _ from 'lodash';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { followItem, unfollowItem } from 'services/auth-user/follow';
+import { followItem, unfollowItem } from 'services/general/auth/follow';
 
 const FollowIcon = ({ isFavorite, onFavoritePress }) => (
-    <TouchableOpacity style={styles.heartOutline} onPress={onFavoritePress}>
-        <FontAwesome name={'heart'} color={isFavorite ? colors.main : colors.white} size={30} />
+    <TouchableOpacity style={[styles.heartOutline]} onPress={onFavoritePress}>
+        <FontAwesome name={'heart'} style={{ shadowOpacity: 1, shadowOffset: { width: 0, height: 0 }, shadowColor: colors.grey, elevation: 2 }} color={isFavorite ? colors.main : colors.grey} size={20} />
     </TouchableOpacity>)
 
 const currency = new Currency();
@@ -26,55 +26,58 @@ class WsItem extends React.Component {
             follow: false
         }
     }
-    componentDidMount() {
-    }
-    getProfileIndex = () => {
-        let profile_index = this.props.item.profile_image_index;
-        return !profile_index || profile_index === -1 ? 0 : profile_index;
-    }
     onFavoritePress = () => {
         let isFollowing = this.isFavoriteItem();
         this.setState({ follow: !isFollowing }, () => {
-            isFollowing ? this.unfollowItem() : this.followItem();
+            isFollowing ? this.unfollow() : this.follow();
         });
     }
-
-    followItem() {
-        followItem(this.props.item._id, () => {
-            this.props.onAddFavoriteItemChange(this.props.item._id);
-        }, (err) => {
-            this.props.onToast(err);
-            this.setState({ follow: false });
-        })
+    follow = async () => {
+        try {
+            let { _id } = this.props.item;
+            let result = await followItem(_id);
+            if (result) {
+                this.props.onAddFavoriteItemChange(this.props.item._id);
+                this.setState({ follow: result });
+            }
+        }
+        catch (err) {
+            this.props.navigation.navigate('Login');
+        }
     }
-    unfollowItem() {
-        unfollowItem(this.props.item._id, () => {
-            this.props.onRemoveFavoriteItemChange(this.props.item._id);
-        }, (err) => {
-            this.props.onToast(err);
-            this.setState({ follow: true });
-        })
+    unfollow = async () => {
+        try {
+            let { _id } = this.props.item;
+            let result = await unfollowItem(_id);
+            if (!result) {
+                this.props.onRemoveFavoriteItemChange(this.props.item._id);
+                this.setState({ follow: result });
+            }
+        }
+        catch (err) {
+            this.props.navigation.navigate('Login');
+        }
     }
     isFavoriteItem = () => {
         return _.includes(this.props.favorite_items, this.props.item._id);
     }
     render() {
         const { profile_images, profile_image_index } = this.props.item;
+        const { item } = this.props;
         return (
             <TouchableOpacity activeOpacity={.8} onPress={() => { this.navigateToItem(this.props.item._id) }}>
                 <View {...this.props} style={[styles.item, this.props.style]}>
                     {this.props.showFollow && <FollowIcon isFavorite={this.isFavoriteItem()} onFavoritePress={this.onFavoritePress} />}
-                    <View >
-                        <View style={styles.image_view}>
-                            {profile_images && profile_images.length ?
-                                <Image progressiveRenderingEnabled style={styles.image} source={{ uri: environments.IMAGE_URL + profile_images[profile_image_index] }} /> :
-                                <Image progressiveRenderingEnabled style={styles.image} defaultSource={require('' + 'assets/uploads/img_not_available.png')} source={{ uri: environments.IMAGE_URL + 'upload/images/img_not_available.png' }} />}
-                        </View>
-                        <View style={styles.card_footer}>
-                            <Text style={styles.label}>{this.props.item.name}</Text>
-                            <View style={{ flexDirection: 'row' }}>
-                                {this.props.showSeller && this.props.item.seller && <Text style={{ flex: 1 }}>{this.props.item.seller.name}</Text>}
-                                <Text style={{ flex: 1, textAlign: 'right' }}>{currency.currencySymbols[this.props.item.currency]}{this.props.item.price}</Text>
+                    <View style={styles.image_view}>
+                        <Image progressiveRenderingEnabled style={styles.image} source={{ uri: ImageHelper.getProfileImage(profile_images, profile_image_index) }} />
+                    </View>
+                    <View style={styles.card_footer}>
+                        <Text style={styles.label} ellipsizeMode={'tail'} numberOfLines={2}>{item.name}</Text>
+                        <View style={{ flexDirection: 'row' }}>
+                            {this.props.showSeller && item.seller && <Text style={{ flex: 1 }}>{item.seller.name}</Text>}
+                            <View style={{ flex: 1, height: 30, justifyContent: 'flex-end' }}>
+                                {item.is_offer && <Text style={{ textDecorationLine: 'line-through', textAlign: 'right' }}>{currency.currencySymbols[item.currency]} {item.price.toFixed(2)}</Text>}
+                                <Text style={{ color: item.is_offer ? 'red' : colors.secondary, textAlign: 'right' }}>{currency.currencySymbols[item.currency]} {item.priceAfterDiscount.toFixed(2)}</Text>
                             </View>
                         </View>
                     </View>
@@ -130,14 +133,14 @@ const styles = StyleSheet.create({
     },
     heartOutline: {
         position: 'absolute',
-        right: 10,
-        top: 10,
+        right: 15,
+        top: 15,
         zIndex: 1,
-        opacity: .7
+        opacity: .7,
     }
 });
 WsItem.defaultProps = {
-    
+
 }
 WsItem.propTypes = {
     navigation: PropTypes.object,

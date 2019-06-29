@@ -13,12 +13,12 @@ export default (state = INITIAL_DATA, action) => {
                 ...state,
                 isRefreshItem: true
             }
-        case 'doneRefreshItem':
-            return {
-                ...state,
-                items: action.payload,
-                isRefreshItem: false
-            }
+        // case 'doneRefreshItem':
+        //     return {
+        //         ...state,
+        //         items: action.payload,
+        //         isRefreshItem: false
+        //     }
         case 'scrollToItem':
             return {
                 ...state,

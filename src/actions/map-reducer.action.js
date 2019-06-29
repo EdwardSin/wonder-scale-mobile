@@ -68,12 +68,7 @@ export const onMapModalPressed = () => {
         type: 'onMapModalPressed'
     }
 }
-export const onCurrentPositionChange = positions => {
-    return {
-        type: 'onCurrentPositionChange',
-        payload: positions
-    }
-}
+
 export const setLoading = loading => {
     return {
         type: 'setLoading',
@@ -86,12 +81,12 @@ export const triggerRefresh = loading => {
         payload: loading
     }
 }
-export const doneRefresh = loading => {
-    return {
-        type: 'doneRefresh',
-        payload: loading
-    }
-}
+// export const doneRefresh = loading => {
+//     return {
+//         type: 'doneRefresh',
+//         payload: loading
+//     }
+// }
 export const onCoordinatesChanged = location => {
     return {
         type: 'onCoordinatesChanged',
@@ -122,9 +117,21 @@ export const setVisibleFilterModal = visible => {
         payload: visible
     }
 }
-export const refreshShops = shops => {
+// export const refreshShops = shops => {
+//     return {
+//         type: 'refreshShops',
+//         payload: shops
+//     }
+// }
+export const onSearchCoordinates = position => {
     return {
-        type: 'refreshShops',
-        payload: shops
+        type: 'onSearchCoordinates',
+        payload: position
+    }
+}
+export const onCurrentPosition = position => {
+    return {
+        type: 'onCurrentPosition',
+        payload: position
     }
 }

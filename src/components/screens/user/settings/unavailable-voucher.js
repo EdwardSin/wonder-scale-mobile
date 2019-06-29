@@ -1,12 +1,11 @@
 import * as VoucherAction from 'actions/voucher-reducer.action';
-import colors from 'assets/variables/colors';
 import { EmptyList, LoadingSpinner, WsRefreshControl, WsSearchbar, WsVoucherCard } from 'components/modals/ws-modals';
 import * as _ from 'lodash';
 import React from 'react';
 import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getUserUnavailableClaimedVouchers } from 'services/auth-user/voucher';
+import { getUserUnavailableClaimedVouchers } from 'services/http/auth-user/voucher';
 
 const { width } = Dimensions.get('window');
 
@@ -39,21 +38,17 @@ class UsedClaimedVoucherScreen extends React.Component {
     render() {
         return this.state.loading ? <LoadingSpinner /> : (
             <View style={styles.container}>
-                <View style={{ paddingVertical: 20, paddingHorizontal: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
-                    <WsSearchbar
-                        placeholder={'Search shop name...'}
-                        loading={this.state.loading}
-                        onChangeText={this.onChangeText}
-                    />
+                <View style={{ marginTop: 10 }}>
+                    <WsSearchbar placeholder={'Search shop name...'} loading={this.state.loading} onChangeText={this.onChangeText} />
                 </View>
                 <FlatList data={this.state.searchVouchers}
                     keyExtractor={(item, index) => item['_id']}
                     ListEmptyComponent={<EmptyList message={"No claimed voucher found!"} />}
-                    refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh} />} 
+                    refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh} />}
                     renderItem={({ item }) => (
                         <View style={{ width: '100%', padding: 10 }}>
                             <WsVoucherCard navigation={this.props.navigation} item={item}>{item.promotion.title}</WsVoucherCard>
-                        </View>)}/>
+                        </View>)} />
             </View>
         );
     }

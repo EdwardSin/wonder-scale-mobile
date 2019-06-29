@@ -6,7 +6,7 @@ import { Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacit
 import ImageViewer from 'react-native-image-zoom-viewer';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { followShop, unfollowShop } from 'services/auth-user/follow';
+import { follow, unfollow } from 'services/http/auth-user/follow';
 const { width } = Dimensions.get('window');
 
 class LatestCard extends React.Component {
@@ -50,8 +50,8 @@ class LatestCard extends React.Component {
         this.setState({ modalVisible: visible, imageIndex: index });
     }
 
-    removeFollowShop = (shopId) => {
-        unfollowShop(shopId, (result) => {
+    removeFollowShop = (id) => {
+        unfollow({ id, type: 'shop' }, (result) => {
             if (result['success']) {
                 this.setState({ isFollow: result['follow'] });
             }
@@ -59,8 +59,8 @@ class LatestCard extends React.Component {
             this.props.onToast(err)
         });
     }
-    addFollowShop = (shopId) => {
-        followShop(shopId, (result) => {
+    addFollowShop = (id) => {
+        follow({ id, type: 'shop' }, (result) => {
             if (result['success']) {
                 this.setState({ isFollow: result['follow'] });
             }
@@ -80,11 +80,11 @@ const ShopProfileImage = ({ item, following, onTitlePress, removeFollowShop, add
     <View style={{ flexDirection: 'row' }}>
         <TouchableOpacity onPress={onTitlePress}>
             <Image
-            style={{ width: 50, height: 50, marginRight: 10 }}
-            source={{ uri: environments.IMAGE_URL + item.profile_image }} />
+                style={{ width: 50, height: 50, marginRight: 10 }}
+                source={{ uri: environments.IMAGE_URL + item.profile_image }} />
         </TouchableOpacity>
         <View>
-            <Text style={{fontSize: 20}} onPress={onTitlePress}>{item.name}</Text>
+            <Text style={{ fontSize: 20 }} onPress={onTitlePress}>{item.name}</Text>
         </View>
 
         {following ?
@@ -125,7 +125,7 @@ const ModalItem = ({ item, isVisible, onSwipeDown, onButtonPress, imageIndex }) 
     }
     )
     return (
-        <Modal visible={isVisible} transparent={true}>
+        <Modal visible={isVisible} transparent={true} onRequestClose={() => { }}>
             <ImageViewer backgroundColor="rgba(0,0,0,.8)" enableSwipeDown={true} onSwipeDown={onSwipeDown} index={imageIndex} imageUrls={images}
                 renderFooter={(currentIndex) => {
                     let it = item.newItems[currentIndex || 0];
@@ -144,13 +144,13 @@ const ModalItem = ({ item, isVisible, onSwipeDown, onButtonPress, imageIndex }) 
 }
 
 const mapStateToProps = state => {
-    return { };
-  }
-  
-  const mapDispatchToProps = dispatch => {
+    return {};
+}
+
+const mapDispatchToProps = dispatch => {
     return bindActionCreators({ ...ToastAction }, dispatch);
-  }
-  export default connect(mapStateToProps, mapDispatchToProps)(LatestCard);
+}
+export default connect(mapStateToProps, mapDispatchToProps)(LatestCard);
 
 const styles = StyleSheet.create({
     card: {

@@ -22,12 +22,16 @@ export default class WsPicker extends React.Component {
   render() {
     return (
       <View style={[styles.container, this.props.style]} {...this.props}>
-        <Text>{this.props.title}</Text>
-        <WSPickerContent value={this.props.value} style={{ width: '100%', }}
+        <WSPickerContent value={this.props.value} style={{
+          width: '100%',
+          backgroundColor: colors.greyLighten3,
+          borderRadius: 5,
+          paddingVertical: 10
+        }}
           customStyles={{
-            valueInput: { borderWidth: 0, borderBottomWidth: 1, alignItems: 'flex-start', borderColor: colors.greyLighten2 },
-            btnTextConfirm: { color: colors.secondary },
-            valueText: { fontSize: 18 }
+            valueInput: { borderWidth: 0 },
+            valueTouchBody: { height: 37.7 },
+            btnTextConfirm: { color: colors.secondary }
           }}
           items={this.props.items} onValueChange={(value) => this.props.onValueChange(value)} />
         <Text style={styles.errorText}>{this.props.errorText}</Text>

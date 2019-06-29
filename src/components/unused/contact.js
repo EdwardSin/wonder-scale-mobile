@@ -4,7 +4,7 @@ import { LoadingSpinner } from 'components/modals/ws-modals';
 import { Constants } from 'expo';
 import React from 'react';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { getShopWithNewItems } from "services/shops";
+import { getShopWithNewItems } from "services/http/public/shops";
 
 const LikeButton = ({ onPress }) => (<TouchableOpacity onPress={onPress}>
   <View style={{ paddingRight: 5 }}>

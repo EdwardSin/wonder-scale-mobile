@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 const INITIAL_DATA = {
-    user: {},
+    user: undefined,
     isSignedIn: false,
     favorite_items: [],
     favorite_shops: []
@@ -19,16 +19,16 @@ export default (state = INITIAL_DATA, action) => {
             }
         case 'onAddFavoriteShopChange':
             return {
-                ...state, 
+                ...state,
                 favorite_shops: _.union(state.favorite_shops, [action.payload])
             }
-        case 'onRemoveFavoriteShopChange': 
+        case 'onRemoveFavoriteShopChange':
             return {
                 ...state,
                 favorite_shops: _.filter(state.favorite_shops, action.payload)
             }
         case 'onAddFavoriteItemChange':
-            return{ 
+            return {
                 ...state,
                 favorite_items: _.union(state.favorite_items, [action.payload])
             }

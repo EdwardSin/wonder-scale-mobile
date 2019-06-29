@@ -5,7 +5,7 @@ import React from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { createMaterialTopTabNavigator } from 'react-navigation';
 import { MaterialTopTabBar } from 'react-navigation-tabs';
-import { getFollowItems, getFollowShops } from 'services/auth-user/follow';
+import { getFollowItems, getFollowShops } from 'services/http/auth-user/follow';
 
 let ShopCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress} style={styles.card}>

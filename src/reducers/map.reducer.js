@@ -1,25 +1,22 @@
 const INITIAL_DATA = {
-    keywordSearchbar: { keyword_value: '', loading: false, type: 'all', focus: false },
-    locationSearchbar: { location_value: '', loading: false, focus: false, searchedLocationLongitude: 0, searchedLocationLatitude: 0 },
-    optionbar: { order: 'thebest', type: 'restaurant', currentlyOpen: true },
     filterModal: { visible: false },
-    mapSetting: {
-        markers: [],
-        showMap: false,
-        loading: false,
-        triggerRefresh: false,
-        //type: 'restaurant',
-        zoom: 14,
-        defaultLength: 40000,
-        radius: 100000 * 0.03,
-        currentPosition: {},
-        circleLatitude: 3.0918247019900864 || 0,
-        circleLongitude: 101.75889492975712 || 0,
-        latitudeDelta: 0.07,
-        longitudeDelta: 0.07,
-        shops: []
-    }
+    markers: [],
+    showMap: false,
+    loading: false,
+    triggerRefresh: false,
+    zoom: 14,
+    defaultLength: 40000,
+    radius: 100000 * 0.02,
+    shops: [],
 
+
+    currentLatitude: 0,
+    currentLongitude: 0,
+    latitudeDelta: 0.07,
+    longitudeDelta: 0.07,
+
+    searchLongitude: 0,
+    searchLatitude: 0
 };
 
 export default (state = INITIAL_DATA, action) => {
@@ -42,7 +39,7 @@ export default (state = INITIAL_DATA, action) => {
         case 'onLocationSearchbarChanged':
             return {
                 ...state,
-                locationSearchbar: { ...state.locationSearchbar, location_value: action.payload }
+                locationSearchbar: { ...state.locationSearchbar, locationKeyword: action.payload }
             }
         case 'onOptionOrderPressed':
             return {
@@ -52,14 +49,18 @@ export default (state = INITIAL_DATA, action) => {
         case 'onOptionTypePressed':
             return {
                 ...state,
-                optionbar: { ...state.optionbar, 
-                        type: action.payload }
+                optionbar: {
+                    ...state.optionbar,
+                    type: action.payload
+                }
             }
         case 'onOptionCurrentlyOpenPressed':
             return {
                 ...state,
-                optionbar: { ...state.optionbar, 
-                    currentlyOpen: !state.optionbar.currentlyOpen }
+                optionbar: {
+                    ...state.optionbar,
+                    currentlyOpen: !state.optionbar.currentlyOpen
+                }
             }
         case 'onKeywordSearchbarFocused':
             return {
@@ -70,7 +71,7 @@ export default (state = INITIAL_DATA, action) => {
         case 'onLocationSearchbarPressed':
             return {
                 ...state,
-                locationSearchbar: { ...state.locationSearchbar, location_value: action.payload }
+                locationSearchbar: { ...state.locationSearchbar, locationKeyword: action.payload }
             }
         case 'onLocationSearchbarFocused':
             return {
@@ -87,92 +88,86 @@ export default (state = INITIAL_DATA, action) => {
         case 'onMapModalPressed':
             return {
                 ...state,
-                mapSetting: { ...state.mapSetting, showMap: !state.mapSetting.showMap }
+                showMap: !state.showMap
             }
-        
+
         case 'onMarkersDisplayed':
             return {
                 ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    markers: action.payload.markers
-                }
+                markers: action.payload.markers
             }
         case 'onCoordinatesChanged':
             return {
                 ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    longitudeDelta: action.payload.longitudeDelta,
-                    latitudeDelta: action.payload.latitudeDelta,
-                    circleLatitude: action.payload.latitude,
-                    circleLongitude: action.payload.longitude
-                }
+                longitudeDelta: action.payload.longitudeDelta,
+                latitudeDelta: action.payload.latitudeDelta,
+                searchLatitude: action.payload.latitude,
+                searchLongitude: action.payload.longitude
             }
-        case 'onSearchedLocationChanged':
+        case 'onSearchCoordinates':
             return {
                 ...state,
-                locationSearchbar: {
-                    ...state.locationSearchbar,
-                    searchedLocationLatitude: action.payload.latitude,
-                    searchedLocationLongitude: action.payload.longitude
-                }
+                searchLatitude: action.payload.latitude,
+                searchLongitude: action.payload.longitude
             }
-        case 'onCurrentPositionChange':
+        case 'onCurrentPosition':
             return {
                 ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    currentPosition: action.payload
-                }
+                currentLatitude: action.payload.latitude,
+                currentLongitude: action.payload.longitude
             }
+
+
+
         case 'setLoading':
             return {
                 ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    loading: action.payload
-                }
+                loading: action.payload
             }
+
         case 'triggerRefresh':
             return {
                 ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    triggerRefresh: true
-                }
+                triggerRefresh: true
+
             }
-        case 'doneRefresh':
-            return {
-                ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    triggerRefresh: false
-                }
-            }
-        case 'refreshShops':
-            return {
-                ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    shops: action.payload.shops
-                }
-            }
+        // case 'refreshShops':
+        //     return {
+        //         ...state,
+        //         shops: action.payload.shops
+
+        //     }
+        // case 'doneRefresh':
+        //     return {
+        //         ...state,
+        //         triggerRefresh: false
+
+        //     }
         case 'onRadiusChanged':
             return {
                 ...state,
-                mapSetting: {
-                    ...state.mapSetting,
-                    radius: action.payload
-                }
+                radius: action.payload
+
             }
-        case 'setVisibleFilterModal':
-            return {
-                ...state,
-                filterModal: {
-                    visible: action.payload
-                }
-            }
+
+
+        // case 'onSearchedLocationChanged':
+        // return {
+        //     ...state,
+        //     locationSearchbar: {
+        //         ...state.locationSearchbar,
+        //         searchedLocationLatitude: action.payload.latitude,
+        //         searchedLocationLongitude: action.payload.longitude
+        //     }
+        // }
+
+        // case 'setVisibleFilterModal':
+        //     return {
+        //         ...state,
+        //         filterModal: {
+        //             visible: action.payload
+        //         }
+        //     }
         default:
             return state;
     }

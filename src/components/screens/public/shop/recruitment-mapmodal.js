@@ -13,7 +13,7 @@ import { Animated, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View }
 import MapView, { Circle, MarkerAnimated } from 'react-native-maps';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getRecruitmentsFromNearestShop } from 'services/recruitment';
+import { getRecruitmentsFromNearestShop } from 'services/http/public/recruitment';
 const { width, height } = Dimensions.get("window");
 
 const CARD_HEIGHT = height / 3;
@@ -23,48 +23,48 @@ class RecruitmentMapModal extends React.Component {
     scrollview;
     constructor(props) {
         super(props);
-        const { circleLatitude, circleLongitude, longitudeDelta, latitudeDelta, radius } = this.props.mapSetting;
+        const { currentLatitude, currentLongitude, longitudeDelta, latitudeDelta, radius } = this.props.mapSetting;
         this.state = {
             favoriteShops: [],
             selected_shop_id: '',
             shop_ids: [],
             selected_index: 0,
             region: {
-                latitude: circleLatitude, 
-                longitude: circleLongitude, 
-                longitudeDelta, 
+                latitude: currentLatitude,
+                longitude: currentLongitude,
+                longitudeDelta,
                 latitudeDelta
             }
         }
-        if (circleLongitude) {
-            this.getRecruitmentsFromNearestShop(circleLongitude, circleLatitude, radius);
+        if (currentLongitude) {
+            this.getRecruitmentsFromNearestShop({ lng: currentLongitude, lat: currentLatitude, radius });
         }
     }
     componentDidMount() {
-        const { currentPosition, longitudeDelta, latitudeDelta } = this.props.mapSetting;
-        if (currentPosition.lat) {
-            this.props.onCoordinatesChanged({
-                longitudeDelta: longitudeDelta,
-                latitudeDelta: latitudeDelta,
-                latitude: currentPosition.lat,
-                longitude: currentPosition.lng
-            });
-        }
+        // const { currentPosition, longitudeDelta, latitudeDelta } = this.props.mapSetting;
+        // if (currentPosition.lat) {
+        //     this.props.onCoordinatesChanged({
+        //         longitudeDelta: longitudeDelta,
+        //         latitudeDelta: latitudeDelta,
+        //         latitude: currentPosition.lat,
+        //         longitude: currentPosition.lng
+        //     });
+        // }
         this.addMapchangeListener();
     }
     componentDidUpdate(prevProps) {
-        const { triggerRefresh, circleLongitude, circleLatitude, radius, markers, latitudeDelta, longitudeDelta } = this.props.mapSetting;
+        const { triggerRefresh, currentLongitude, currentLatitude, radius, markers, latitudeDelta, longitudeDelta } = this.props.mapSetting;
         if (triggerRefresh) {
             this.props.setLoading(true);
-            this.getRecruitmentsFromNearestShop(circleLongitude, circleLatitude, radius);
+            this.getRecruitmentsFromNearestShop({ lng: currentLongitude, lat: currentLatitude, radius });
             this.map.animateToRegion({
-                latitude: circleLatitude,
-                longitude: circleLongitude,
+                latitude: currentLatitude,
+                longitude: currentLongitude,
                 latitudeDelta,
                 longitudeDelta
             })
             this.addMapchangeListener();
-            this.props.doneRefresh();
+            //this.props.doneRefresh();
             this.props.refreshItem();
         }
         if (this.props.navigation.state.params && this.props.navigation.state.params.selected_shop_id) {
@@ -87,7 +87,7 @@ class RecruitmentMapModal extends React.Component {
         this.removeMapchangeListener();
     }
     render() {
-        const { loading, circleLatitude, circleLongitude, radius, longitudeDelta, latitudeDelta, markers, visible } = this.props.mapSetting;
+        const { loading, currentLatitude, currentLongitude, radius, longitudeDelta, latitudeDelta, markers, visible } = this.props.mapSetting;
         const { region } = this.state;
         const { navigation } = this.props;
         const interpolations = markers.map((marker, index) => {
@@ -121,10 +121,11 @@ class RecruitmentMapModal extends React.Component {
                     initialRegion={this.getInitialRegion()}
                     onRegionChangeComplete={this.onRegionChangeComplete}
                     style={{ height: height * 2 / 3 - 20 }}>
-                    <Circle center={{ latitude: circleLatitude, longitude: circleLongitude }} radius={radius} fillColor={'rgba(102, 204, 255, .5)'} />
+                    <Circle center={{ latitude: currentLatitude, longitude: currentLongitude }} radius={radius} fillColor={'rgba(102, 204, 255, .5)'} />
                     {markers.map((marker, index) => {
-                    return (<RecruitmentMarker marker={marker} interpolations={interpolations} selected_index={this.state.selected_index} 
-                    index={index} onPress={this.onMarkerSelect.bind(this, index)} />)})}
+                        return (<RecruitmentMarker marker={marker} interpolations={interpolations} selected_index={this.state.selected_index}
+                            index={index} onPress={this.onMarkerSelect.bind(this, index)} />)
+                    })}
                 </MapView>
                 <Animated.ScrollView
                     horizontal
@@ -159,7 +160,7 @@ class RecruitmentMapModal extends React.Component {
                         };
                         return (<RecruitmentCard key={index} marker={marker}
                             style={scaleStyle} onPress={() => {
-                                this.props.onSelectedShopId(marker.shop_id);
+                                this.props.onSelectedShopId(marker.shop._id);
                                 this.props.navigation.navigate("RecruitmentDetail", { recruitment_id: marker._id });
                             }} />)
                     }) : <EmptyList message={'No recruitment in this area!'} />
@@ -170,8 +171,9 @@ class RecruitmentMapModal extends React.Component {
     }
     // #region Events
     onRegionChangeComplete = (region) => {
-        const { radius, latitudeDelta, circleLatitude, circleLongitude, longitudeDelta } = this.props.mapSetting;
-        this.props.onCoordinatesChanged(region);
+        const { radius, latitudeDelta, currentLatitude, currentLongitude, longitudeDelta } = this.props.mapSetting;
+        //this.props.onCoordinatesChanged(region);
+
         this.props.onRadiusChanged(radius / latitudeDelta * region.latitudeDelta);
     }
     addMapchangeListener = () => {
@@ -212,14 +214,14 @@ class RecruitmentMapModal extends React.Component {
         this.animation.removeListener(this.animationId);
     }
     onMarkerSelect = (index) => {
-        this.setState({selected_index: index});
+        this.setState({ selected_index: index });
         this.scrollview.getNode().scrollTo({ x: index * CARD_WIDTH, y: 0, animated: false });
     }
     // #endregion
 
     // #region Private Methods
-    getRecruitmentsFromNearestShop = (lng, lat, radius) => {
-        getRecruitmentsFromNearestShop(lng, lat, radius, (result) => {
+    getRecruitmentsFromNearestShop = ({ lng, lat, radius }) => {
+        getRecruitmentsFromNearestShop({ lng, lat, radius }, (result) => {
             this.updateMarkers(result.result);
         }, (err) => {
             this.props.onToast(err);
@@ -227,12 +229,12 @@ class RecruitmentMapModal extends React.Component {
         })
     }
     getInitialRegion = () => {
-        const { circleLatitude, circleLongitude, longitudeDelta, latitudeDelta } = this.props.mapSetting;
+        const { currentLatitude, currentLongitude, longitudeDelta, latitudeDelta } = this.props.mapSetting;
         return {
-                latitude: circleLatitude, 
-                longitude: circleLongitude, 
-                longitudeDelta, 
-                latitudeDelta
+            latitude: currentLatitude,
+            longitude: currentLongitude,
+            longitudeDelta,
+            latitudeDelta
         }
     }
     updateMarkers = (recruitments) => {
@@ -247,11 +249,11 @@ class RecruitmentMapModal extends React.Component {
         return recruitments.map(x => {
             return {
                 ...x,
-                profile_image: environments.IMAGE_URL + x.shop_id.profile_image,
-                name: x.shop_id.name,
+                profile_image: environments.IMAGE_URL + x.shop.profile_image,
+                name: x.shop.name,
                 coordinate: {
-                    longitude: x.shop_id.location.coordinates[0],
-                    latitude: x.shop_id.location.coordinates[1]
+                    longitude: x.shop.location.coordinates[0],
+                    latitude: x.shop.location.coordinates[1]
                 }
             }
         });
@@ -271,22 +273,22 @@ const EmptyList = ({ message }) => (
 const RecruitmentCard = ({ marker, style, onPress }) => {
     return (
         <TouchableOpacity activeOpacity={.8} onPress={onPress}>
-        <Animated.View style={[styles.cardContainer, style]}>
-            <View style={styles.card}>
-                <View style={{ flexDirection: 'row' }}>
-                        <Image source={{uri: marker.profile_image}} style={styles.cardImage} resizeMode={"contain"}/>
+            <Animated.View style={[styles.cardContainer, style]}>
+                <View style={styles.card}>
+                    <View style={{ flexDirection: 'row' }}>
+                        <Image source={{ uri: marker.profile_image }} style={styles.cardImage} resizeMode={"contain"} />
                         <View style={{ flexDirection: 'column', flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                             <Text style={{ fontSize: 18, color: colors.greyDarken2 }}>{marker.name}</Text>
                         </View>
+                    </View>
+                    <View style={styles.textContent}>
+                        <Text numberOfLines={1} style={styles.cardtitle}>{marker.job_title}</Text>
+                        <View style={{ marginHorizontal: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten2 }}></View>
+                        <Text numberOfLines={3} style={styles.cardDescription}>{marker.job_description}</Text>
+                    </View>
                 </View>
-                <View style={styles.textContent}>
-                    <Text numberOfLines={1} style={styles.cardtitle}>{marker.job_title}</Text>
-                    <View style={{ marginHorizontal: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten2 }}></View>
-                    <Text numberOfLines={3} style={styles.cardDescription}>{marker.job_description}</Text>
-                </View>
-            </View>
-        </Animated.View>
-    </TouchableOpacity>)
+            </Animated.View>
+        </TouchableOpacity>)
 }
 const RecruitmentMarker = ({ interpolations, index, selected_index, marker, onPress }) => {
     const scaleStyle = {
@@ -298,7 +300,7 @@ const RecruitmentMarker = ({ interpolations, index, selected_index, marker, onPr
         opacity: interpolations[index].opacity,
     };
     return (
-        <MarkerAnimated key={index} coordinate={marker.coordinate} onPress={onPress} title={marker.name} zIndex={ index === selected_index ? 1 : 0 }>
+        <MarkerAnimated key={index} coordinate={marker.coordinate} onPress={onPress} title={marker.name} zIndex={index === selected_index ? 1 : 0}>
             <Animated.View style={[styles.markerWrap, opacityStyle, scaleStyle]}>
                 <Image style={{ height: 80, width: 30 }} resizeMode={'contain'} source={Images.mapMarker} />
             </Animated.View>
@@ -307,13 +309,11 @@ const RecruitmentMarker = ({ interpolations, index, selected_index, marker, onPr
 }
 const mapStateToProps = state => {
     return {
-        mapSetting: state.mapReducer.mapSetting,
-        keywordSearchbar: state.mapReducer.keywordSearchbar,
-        optionbar: state.mapReducer.optionbar
+        mapSetting: state.mapReducer
     };
 }
 const mapDispatchToProps = dispatch => {
-    return bindActionCreators({ ...MapAction, ...ToastAction, ...ShopAction, ... ItemAction }, dispatch);
+    return bindActionCreators({ ...MapAction, ...ToastAction, ...ShopAction, ...ItemAction }, dispatch);
 }
 export default connect(mapStateToProps, mapDispatchToProps)(RecruitmentMapModal);
 
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
         height: '100%'
     },
     scrollView: {
-        position: "absolute",
+        position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
         shadowColor: "#000",
         shadowRadius: 5,
         shadowOpacity: 0.3,
-        shadowOffset: { x: 2, y: -2 },
+        shadowOffset: { width: 2, height: -2 },
         elevation: 2
     },
     cardImage: {

@@ -5,7 +5,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ListItem } from 'react-native-elements';
 import { connect } from 'react-redux';
-import { getCategoriesByShopId } from 'services/category';
+import { getCategoriesByShopId } from 'services/http/public/category';
 
 class ShopCategoriesScreen extends React.Component {
   constructor(props) {
@@ -15,19 +15,20 @@ class ShopCategoriesScreen extends React.Component {
       categories: [],
       searchCategories: [],
       refreshing: false,
+      shop_id: this.props.shop_id
     }
   }
 
   componentDidMount() {
     this.getCategories();
   }
-  
+
   render() {
     return (
       this.state.loading ? <LoadingSpinner /> :
         (<View style={styles.container}>
           <WsStatusBar />
-          <View style={{ marginHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
+          <View style={{ marginTop: 10, paddingHorizontal: 10 }}>
             <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Category'} />
           </View>
           <ScrollView refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh.bind(this)} />}>
@@ -59,8 +60,9 @@ class ShopCategoriesScreen extends React.Component {
   }
   // #endregion
   getCategories = () => {
+    let { shop_id } = this.state;
     this.setState({ loading: true });
-    getCategoriesByShopId(this.props.shop_id, (result) => {
+    getCategoriesByShopId(shop_id, (result) => {
       if (result && result.result) {
         this.setState({
           categories: result.result,
@@ -74,7 +76,7 @@ class ShopCategoriesScreen extends React.Component {
 const CategoriesList = ({ categories, onPress }) => {
   return (<View style={{ padding: 10 }}>
     {categories && categories.length > 0 ? categories.map((category, index) => (
-      <CategoryListItem index={index} onPress={() => onPress(category._id)} category={category} />
+      <CategoryListItem key={index} index={index} onPress={() => onPress(category._id)} category={category} />
     )) : <EmptyList />
     }
   </View>)
@@ -97,8 +99,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white
   },
   categoryListContainer: {
-    backgroundColor: colors.lightGrey,
+    backgroundColor: colors.greyLighten4,
     borderBottomColor: 'transparent',
-    borderRadius: 50, marginBottom: 5
+    borderRadius: 10,
+    marginVertical: 5
   }
 });

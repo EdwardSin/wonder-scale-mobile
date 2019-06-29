@@ -1,15 +1,15 @@
 import * as ToastAction from 'actions/toast-reducer.action';
 import colors from 'assets/variables/colors';
-import { BottomButton, LoadingScreen, WsDateTimePicker, WsPicker, WsStatusBar, WsTextInput } from 'components/modals/ws-modals';
-import EmailValidator from 'components/validators/email';
-import PasswordValidator from 'components/validators/password';
+import { LoadingScreen, WsDateTimePicker, WsPicker, WsTextInput } from 'components/modals/ws-modals';
 import moment from 'moment';
 import React from 'react';
 import { Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { CheckBox } from 'react-native-elements';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { addUser } from 'services/users';
+import { addUser } from 'services/http/public/users';
+import EmailValidator from 'validators/email';
+import PasswordValidator from 'validators/password';
 
 class SignUpScreen extends React.Component {
   today = new Date();
@@ -45,28 +45,26 @@ class SignUpScreen extends React.Component {
 
   componentDidMount() {
     this.props.navigation.setParams({ onPressSignUp: () => this.onPressSignUp(), disabled: false });
-    
+
   }
   render() {
     return (
       <View style={styles.container}>
-        <WsStatusBar />
         <LoadingScreen loading={this.state.loading} title={'Loading...'} onRequestClose={this.requestClose} />
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: '5%', paddingBottom: '10%', paddingHorizontal: '10%' }}
           keyboardShouldPersistTaps='handled'>
-          <WsTextInput title={'Login Email'} textInput={{ onChangeText: this.onEmailChanged, keyboardType: 'email-address', value: this.state.email }} />
-          <WsTextInput title={'First Name'} textInput={{ onChangeText: this.onFirstNameChanged, value: this.state.firstName }} />
-          <WsTextInput title={'Last Name'} textInput={{ onChangeText: this.onLastNameChanged, value: this.state.lastName }} />
-          <WsTextInput title={'Phone Number'} textInput={{ onChangeText: this.onTelChanged, keyboardType: "number-pad", value: this.state.tel }} />
-          <WsPicker title={'Gender'} onValueChange={this.onGenderValueChange} value={this.state.gender}
+          <WsTextInput placeholder={'Login Email'} onChangeText={this.onEmailChanged} keyboardType={'email-address'} value={this.state.email} />
+          <WsTextInput placeholder={'First Name'} onChangeText={this.onFirstNameChanged} value={this.state.firstName} />
+          <WsTextInput placeholder={'Last Name'} onChangeText={this.onLastNameChanged} value={this.state.lastName} />
+          <WsTextInput placeholder={'Phone Number'} onChangeText={this.onTelChanged} keyboardType={"number-pad"} value={this.state.tel} />
+          <WsPicker placeholder={'Gender'} onValueChange={this.onGenderValueChange} value={this.state.gender}
             customStyles={{ btnCancel: { color: colors.secondary } }}
             items={[{ label: 'Select Gender', value: '' }, { label: 'Male', value: 'male' }, { label: 'Female', value: 'female' }]}></WsPicker>
-          <WsTextInput title={'Password'} textInput={{ onChangeText: this.onPasswordChanged, secureTextEntry: true, value: this.state.password }} />
-          <WsTextInput title={'Confirmation Password'} textInput={{ onChangeText: this.onConfirmationPasswordChanged, secureTextEntry: true, value: this.state.confirmPassword }} />
-          <WsDateTimePicker style={{ marginBottom: 20 }} title={'Birthday'} date={this.state.dateOfBirth} onDateChanged={this.onDateChanged} />
+          <WsTextInput placeholder={'Password'} onChangeText={this.onPasswordChanged} secureTextEntry={true} value={this.state.password} />
+          <WsTextInput placeholder={'Confirmation Password'} onChangeText={this.onConfirmationPasswordChanged} secureTextEntry={true} value={this.state.confirmPassword} />
+          <WsDateTimePicker style={{ marginBottom: 20 }} placeholder={'Birthday'} date={this.state.dateOfBirth} onDateChanged={this.onDateChanged} />
           <CheckBox containerStyle={styles.checkboxView} checkedColor={colors.secondary} checked={this.state.receiveInfo} onPress={this.onPressCheckbox} title="I'd like to receive marketing and policy communications fromWonderScale and its partners." />
         </ScrollView>
-        <BottomButton onPress={this.onPressSignUp}>Sign up</BottomButton>
       </View>
     );
   }

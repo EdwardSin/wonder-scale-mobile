@@ -1,24 +1,27 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ItemAction from 'actions/item-reducer.action';
 import * as MapAction from 'actions/map-reducer.action';
+import * as SearchbarAction from 'actions/searchbar-reducer.action';
 import * as ShopAction from 'actions/shop-reducer.action';
 import * as ToastAction from 'actions/toast-reducer.action';
 import Images from 'assets/images';
 import colors from 'assets/variables/colors';
-import { FilterController, MapController } from 'components/modals/ws-modals';
-import { DistanceConverter } from 'components/pipes/distance-converter.pipe';
+import { MapController } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
+import { LinearGradient } from 'expo';
+import * as ImageHelper from 'helpers/image.helper';
 import _ from 'lodash';
+import DistanceConverter from 'pipes/distance-converter.pipe';
 import React from 'react';
-import { Animated, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Image, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Circle, MarkerAnimated } from 'react-native-maps';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { followShop, getFollowShopsId, unfollowShop } from 'services/auth-user/follow';
-import { getShopsThroughShopIds } from 'services/items';
-import { getNearsShopByPoint } from 'services/shops';
+import { follow, getFollowIds, unfollow } from 'services/http/auth-user/follow';
+import { getShopsBySearchItem, getShopsBySearchText } from 'services/http/public/shops';
+
 const { width, height } = Dimensions.get("window");
 
 const CARD_HEIGHT = height / 3;
@@ -26,55 +29,66 @@ const CARD_WIDTH = width / 2 + 60;
 
 class MapModal extends React.Component {
     scrollview;
+    map;
+    animation = new Animated.Value(0);
     constructor(props) {
         super(props);
-        const { circleLatitude, circleLongitude, longitudeDelta, latitudeDelta, radius } = this.props.mapSetting;
+        const { currentLatitude, currentLongitude, longitudeDelta, latitudeDelta, radius } = this.props.mapSetting;
         this.state = {
+            searchShopsByItems: props.searchShopsByItems,
+            searchShopsByName: props.searchShopsByName,
+            searchMoreLoading: false,
             favoriteShops: [],
             selected_shop_id: '',
             shop_ids: [],
             selected_index: 0,
+            skip: props.skip,
+            limit: props.limit,
             region: {
-                latitude: circleLatitude, 
-                longitude: circleLongitude, 
-                longitudeDelta, 
+                latitude: currentLatitude,
+                longitude: currentLongitude,
+                longitudeDelta,
                 latitudeDelta
             }
         }
-        if (circleLongitude) {
-            this.getNearestShops(circleLongitude, circleLatitude, radius);
-        }
+        // if (currentLongitude) {
+        //     this.getNearestShops({ lng: currentLongitude, lat: currentLatitude, radius });
+        // }
     }
     componentDidMount() {
-        const { currentPosition, longitudeDelta, latitudeDelta } = this.props.mapSetting;
-        if (currentPosition.lat) {
-            this.props.onCoordinatesChanged({
-                longitudeDelta: longitudeDelta,
-                latitudeDelta: latitudeDelta,
-                latitude: currentPosition.lat,
-                longitude: currentPosition.lng
-            });
-        }
-
-        this.addMapchangeListener();
+        const { longitudeDelta, latitudeDelta } = this.props.mapSetting;
+        const { searchShopsByItems, searchShopsByName } = this.props;
+        this.setState({ searchShopsByItems, searchShopsByName });
+        this.updateMarkers({ searchShopsByName, searchShopsByItems });
+        //this.addMapchangeListener();
     }
-    componentDidUpdate(prevProps) {
-        const { triggerRefresh, circleLongitude, circleLatitude, radius, markers, latitudeDelta, longitudeDelta } = this.props.mapSetting;
-        if (triggerRefresh) {
-            this.props.setLoading(true);
-            this.getNearestShops(circleLongitude, circleLatitude, radius);
+    componentDidUpdate(prevProps, prevState) {
+        const { searchTrigger, setResultParams, navigation } = this.props;
+        const { searchShopsByItems, searchShopsByName } = this.state;
+        const { triggerRefresh, currentLongitude, currentLatitude, radius, searchLatitude, searchLongitude, markers, latitudeDelta, longitudeDelta } = this.props.mapSetting;
+
+        if (searchTrigger && !prevProps.searchTrigger) {
+            this.setState({ searchShopsByItems: [], searchShopsByName: [], skip: 0 }, () => {
+                this.retrieveShopsBySearchName();
+                this.retrieveShopsBySearchItems();
+                this.stopLoading();
+                this.props.isSearchTriggered(false);
+            });
             this.map.animateToRegion({
-                latitude: circleLatitude,
-                longitude: circleLongitude,
+                latitude: searchLatitude,
+                longitude: searchLongitude,
                 latitudeDelta,
                 longitudeDelta
             })
-            this.addMapchangeListener();
-            this.props.doneRefresh();
-            this.props.refreshItem();
         }
-        if (this.props.navigation.state.params && this.props.navigation.state.params.selected_shop_id) {
-            let index = _.findIndex(markers, (x) => x._id == this.props.navigation.state.params.selected_shop_id);
+
+        if (searchShopsByItems != prevState.searchShopsByItems || searchShopsByName != prevState.searchShopsByName) {
+            this.props.onSearchShopsByName(searchShopsByName);
+            this.props.onSearchShopsByItems(searchShopsByItems);
+            this.updateMarkers({ searchShopsByName, searchShopsByItems });
+        }
+        if (navigation.state.params && navigation.state.params.selected_shop_id) {
+            let index = _.findIndex(markers, (x) => x._id == navigation.state.params.selected_shop_id);
             this.onMarkerSelect(index);
             this.map.animateToRegion({
                 latitude: markers[index].coordinate.latitude,
@@ -82,20 +96,43 @@ class MapModal extends React.Component {
                 latitudeDelta,
                 longitudeDelta
             })
-            this.props.navigation.state.params.selected_shop_id = '';
+            navigation.state.params.selected_shop_id = '';
         }
     }
     componentWillMount() {
         this.index = 0;
-        this.animation = new Animated.Value(0);
-        this.getFollowShopsId();
+        this.getFollowIds();
     }
     componentWillUnmount() {
         this.removeMapchangeListener();
     }
+    async retrieveShopsBySearchItems() {
+        let { searchShopsByItems, skip, limit } = this.state;
+        let { searchKeyword, setResultParams } = this.props;
+        let { searchLatitude, searchLongitude, radius, currentLatitude, currentLongitude } = this.props.mapSetting;
+        this.setState({ searchMoreLoading: true });
+        let result = await getShopsBySearchItem({ query: searchKeyword, limit: 5, skip, lat: searchLatitude, lng: searchLongitude, radius }, { current_lat: currentLatitude, current_lng: currentLongitude });
+        if (result.result && !result.result.length) {
+            this.setState({ refreshing: false, searchMoreLoading: false, hasMore: false });
+            return;
+        }
+        setResultParams({ skip: skip + result.result.length });
+        this.setState({ searchShopsByItems: [...searchShopsByItems, ...result.result] });
+    }
+
+    async retrieveShopsBySearchName() {
+        let { searchLatitude, searchLongitude, radius } = this.props.mapSetting;
+        let { searchKeyword } = this.props;
+        this.setState({ searchMoreLoading: true });
+        let result = await getShopsBySearchText({ query: searchKeyword, limit: 3, lat: searchLatitude, lng: searchLongitude, radius });
+        this.setState({ searchShopsByName: result.result });
+    }
+    stopLoading() {
+        this.setState({ searchMoreLoading: false, refreshing: false, onSearchDisplayed: true })
+    }
     render() {
-        const { loading, circleLatitude, circleLongitude, radius, longitudeDelta, latitudeDelta, markers, visible } = this.props.mapSetting;
-        const { region } = this.state;
+        const { loading, searchLatitude, searchLongitude, radius, markers, visible } = this.props.mapSetting;
+        const { region, searchMoreLoading } = this.state;
         const { navigation } = this.props;
         const interpolations = markers.map((marker, index) => {
             const inputRange = [(index - 1) * CARD_WIDTH, index * CARD_WIDTH, ((index + 1) * CARD_WIDTH)];
@@ -122,85 +159,104 @@ class MapModal extends React.Component {
             });
             return { scale, opacity, translateY, scaleCard };
         });
+
         return (
-            <View style={styles.container} >
-                <BackButton onPress={() => { navigation.goBack(); }} />
-                <MapController loading={loading} />
+            <View style={styles.container}>
+                <BackButton onPress={() => { this.props.navigation.goBack(null) }} />
                 <MapView
                     showsUserLocation
                     loadingEnabled
                     ref={map => this.map = map}
                     initialRegion={this.getInitialRegion()}
                     onRegionChangeComplete={this.onRegionChangeComplete}
-                    style={{ height: height * 2 / 3 - 20 }}>
-                    <Circle center={{ latitude: circleLatitude, longitude: circleLongitude }} radius={radius} fillColor={'rgba(102, 204, 255, .5)'} />
-                    {markers.map((marker, index) => <ShopMarker marker={marker} interpolations={interpolations} selected_index={this.state.selected_index} index={index} onPress={this.onMarkerSelect.bind(this, index)} />)}
+                    style={{ height: height - CARD_HEIGHT }}>
+                    <Circle zIndex={10} center={{ latitude: searchLatitude, longitude: searchLongitude }}
+                        radius={radius}
+                        fillColor={'rgba(112, 112, 112, .16)'} strokeWidth={.1}
+                        onTouchStart={(event) => {
+                            event.stopPropagation();
+                            console.log('start1');
+                        }}
+                        onTouchMove={(event) => {
+                            event.stopPropagation();
+                            console.log('move1');
+                        }}
+                        onTouchEnd={(event) => {
+                            event.stopPropagation();
+                            console.log('release1');
+                        }}
+                        onPress={(event) => {
+                            console.log('press1')
+                        }}
+                    />
+                    {markers.map((marker, index) => <ShopMarker key={index} index={index} marker={marker} interpolations={interpolations} selected_index={this.state.selected_index} onPress={this.onMarkerSelect.bind(this, index)} />)}
                 </MapView>
-                <View style={{ flexDirection: 'row', width: '100%', marginTop: -50, zIndex: 3, paddingHorizontal: 20 }}>
+
+                {/* <View style={{ flexDirection: 'row', width: '100%', marginTop: -50, zIndex: 3, paddingHorizontal: 20 }}>
                     <View style={{ flex: 1 }}></View>
-                    <View style={{ justifyContent: 'center' }}>
-                        <FilterController navigation={navigation} />
-                    </View>
                     <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'center' }}>
-                        <ItemListButton onPress={() => { navigation.navigate('ItemsDisplay', { shop_ids: this.state.shop_ids}) }} />
+                        <ItemListButton onPress={() => { navigation.navigate('ItemsDisplay', { shop_ids: this.state.shop_ids }) }} />
                     </View>
-                </View>
-                <Animated.ScrollView
-                    horizontal
-                    scrollEventThrottle={1}
-                    ref={ref => { this.scrollview = ref }}
-                    showsHorizontalScrollIndicator={false}
-                    snapToInterval={CARD_WIDTH}
-                    snapToAlignment={'start'}
-                    decelerationRate={'fast'}
-                    pagingEnabled
-                    onScroll={Animated.event(
-                        [
-                            {
-                                nativeEvent: {
-                                    contentOffset: {
-                                        x: this.animation,
+                </View> */}
+
+                <View style={styles.mapcontrollerbar}>
+                    <MapController navigation={this.props.navigation} />
+                    <Animated.ScrollView
+                        horizontal
+                        scrollEventThrottle={1}
+                        ref={ref => { this.scrollview = ref }}
+                        showsHorizontalScrollIndicator={false}
+                        snapToInterval={CARD_WIDTH}
+                        decelerationRate={'fast'}
+                        pagingEnabled
+                        onScroll={Animated.event(
+                            [
+                                {
+                                    nativeEvent: {
+                                        contentOffset: {
+                                            x: this.animation,
+                                        },
                                     },
                                 },
-                            },
-                        ],
-                        { useNativeDriver: true }
-                    )}
-                    style={styles.scrollView}
-                    contentContainerStyle={markers.length > 0 ? styles.endPadding : ''} >
-                    {markers.length > 0 ? markers.map((marker, index) => {
-                        const scaleStyle = {
-                            transform: [
-                                {
-                                    scale: interpolations[index].scaleCard,
-                                },
                             ],
-                        };
-                        return (<ShopCard key={index} marker={marker} isFavorite={this.isFollowShop(marker._id)}
-                            onUnfavoritePress={() => this.onUnfavoritePress(marker._id)}
-                            onFavoritePress={() => this.onFavoritePress(marker._id)}
-                            onItemsPress={() => this.onItemsPress(marker._id)}
-                            type={this.props.optionbar.type}
-                            style={scaleStyle} onPress={() => {
-                                this.props.onSelectedShopId(marker._id);
-                                this.props.navigation.navigate("FrontShop", { shopId: marker._id });
-                            }} />)
-                    }) : <EmptyList message={'No displayed shop!'} />
-                    }
-                </Animated.ScrollView>
+                            { useNativeDriver: true }
+                        )}
+                        style={styles.scrollView}
+                        contentContainerStyle={markers.length > 0 ? styles.endPadding : ''} >
+                        {
+                            markers.length > 0 ? markers.map((marker, index) => {
+                                const scaleStyle = {
+                                    transform: [
+                                        {
+                                            scale: interpolations[index].scaleCard,
+                                        },
+                                    ],
+                                };
+                                return (<ShopCard key={index} marker={marker} isFavorite={this.isFollowShop(marker._id)}
+                                    onUnfavoritePress={() => this.onUnfavoritePress(marker._id)}
+                                    onFavoritePress={() => this.onFavoritePress(marker._id)}
+                                    onItemsPress={() => this.onItemsPress(marker._id)}
+                                    type={this.props.optionbar.type}
+                                    style={scaleStyle} onPress={() => {
+                                        this.props.onSelectedShopId(marker._id);
+                                        this.props.navigation.navigate("FrontShop", { shopId: marker._id });
+                                    }} />)
+                            }) : <EmptyList message={'No result!'} />
+                        }
+                    </Animated.ScrollView>
+                </View>
             </View>
         );
     }
     // #region Events
     onRegionChangeComplete = (region) => {
-        const { radius, latitudeDelta, circleLatitude, circleLongitude, longitudeDelta } = this.props.mapSetting;
+        const { radius, latitudeDelta } = this.props.mapSetting;
         this.props.onCoordinatesChanged(region);
         this.props.onRadiusChanged(radius / latitudeDelta * region.latitudeDelta);
     }
     addMapchangeListener = () => {
         // We should detect when scrolling has stopped then animate
         // We should just debounce the event listener here
-
         this.animationId = this.animation.addListener(({ value }) => {
             let { markers, latitudeDelta, longitudeDelta } = this.props.mapSetting;
             let index = Math.floor(value / CARD_WIDTH + 0.3); // animate 30% away from landing on the next item
@@ -235,7 +291,7 @@ class MapModal extends React.Component {
         this.animation.removeListener(this.animationId);
     }
     onUnfavoritePress(shop_id) {
-        unfollowShop(shop_id, (result) => {
+        unfollow({ id: shop_id, type: 'shops' }, (result) => {
             if (result) {
                 let array = this.state.favoriteShops;
                 _.remove(array, x => x == shop_id);
@@ -250,7 +306,7 @@ class MapModal extends React.Component {
         this.props.navigation.navigate("Categories", { shopId: id });
     }
     onFavoritePress(shop_id) {
-        followShop(shop_id, result => {
+        follow({ id: shop_id, type: 'shops' }, result => {
             if (result) {
                 this.setState({ favoriteShops: _.union(this.state.favoriteShops, [shop_id]) });
             }
@@ -259,14 +315,14 @@ class MapModal extends React.Component {
         })
     }
     onMarkerSelect = (index) => {
-        this.setState({selected_index: index});
+        this.setState({ selected_index: index });
         this.scrollview.getNode().scrollTo({ x: index * CARD_WIDTH, y: 0, animated: false });
     }
     // #endregion
 
     // #region Private Methods
-    getFollowShopsId() {
-        getFollowShopsId((result) => {
+    getFollowIds() {
+        getFollowIds({ type: 'shops' }, (result) => {
             if (result['result']) {
                 this.setState({ favoriteShops: result['result'] });
             }
@@ -275,64 +331,47 @@ class MapModal extends React.Component {
     isFollowShop(shop_id) {
         return _.includes(this.state.favoriteShops, shop_id);
     }
-    getNearestShops = (lng, lat, radius) => {
-        const { currentPosition } = this.props.mapSetting;
-        const { keyword_value } = this.props.keywordSearchbar;
-        const { type } = this.props.optionbar;
-        getNearsShopByPoint(lng, lat, radius, { ...currentPosition, type }, (result) => {
-            keyword_value != '' ? this.filterShopsByKeyword(result.result.map(x => x._id)) : this.updateMarkers(result.result);
-        })
-    }
-    filterShopsByKeyword = (shop_ids) => {
-        const { currentPosition } = this.props.mapSetting;
-        const { keyword_value } = this.props.keywordSearchbar;
-        const { type } = this.props.optionbar;
-        getShopsThroughShopIds({ keyword: keyword_value, shop_id: shop_ids, ...currentPosition }, (result) => {
-            this.updateMarkers(result.result);
-        }, (err) => { 
-            this.props.onToast(err);
-            this.props.setLoading(false);
-        })
-    }
     getInitialRegion = () => {
-        const { circleLatitude, circleLongitude, longitudeDelta, latitudeDelta } = this.props.mapSetting;
+        const { searchLatitude, searchLongitude, longitudeDelta, latitudeDelta } = this.props.mapSetting;
         return {
-                latitude: circleLatitude, 
-                longitude: circleLongitude, 
-                longitudeDelta, 
-                latitudeDelta
+            latitude: searchLatitude,
+            longitude: searchLongitude,
+            longitudeDelta,
+            latitudeDelta
         }
     }
-    updateMarkers = (shops) => {
+    updateMarkers = ({ searchShopsByItems, searchShopsByName }) => {
+        let shops = [...searchShopsByItems, ...searchShopsByName];
         let markers = this.getMarkers(shops);
-        this.props.onMarkersDisplayed({ markers: markers });
+        this.props.onMarkersDisplayed({ markers });
         this.addMapchangeListener();
         this.props.setLoading(false);
         this.setState({ shop_ids: _.map(shops, x => x._id) });
     }
     getMarkers(shops) {
         return shops.map(x => {
+            let url = ImageHelper.hasUploadedImage(x.profile_image) ? environments.IMAGE_URL + x.profile_image : x.profile_image
             return {
                 _id: x._id,
                 dist: x.dist,
                 coordinate:
-                    {
-                        longitude: x.location.coordinates[0],
-                        latitude: x.location.coordinates[1]
-                    },
+                {
+                    longitude: x.location.coordinates[0],
+                    latitude: x.location.coordinates[1]
+                },
                 title: x.name,
                 description: x.description,
-                image: { uri: x.profile_image ? environments.IMAGE_URL + x.profile_image : environments.IMAGE_URL + 'upload/images/shop.png' }
+                image: { uri: url }
             }
         });
     }
     // #endregion
 }
 const BackButton = ({ onPress }) => (
-    <TouchableOpacity style={styles.backButtonContainer} onPress={onPress} >
-        <Ionicons name={'ios-close-circle-outline'} size={35} color={colors.secondary} />
-    </TouchableOpacity>
-)
+    <TouchableOpacity style={{ position: 'absolute', top: 10, left: 10, zIndex: 10 }} onPress={onPress}>
+        <MaterialCommunityIcons color={colors.white} size={26} name={'chevron-left'} />
+    </TouchableOpacity>)
+
 const EmptyList = ({ message }) => (
     <View style={{ height: CARD_HEIGHT, width: width - 25, justifyContent: 'center' }}>
         <Text style={{ textAlign: 'center', fontSize: 20 }}>{message}</Text>
@@ -344,43 +383,53 @@ const ShopCard = ({ marker, style, type, onPress, isFavorite, onUnfavoritePress,
         rating = marker.review.score / marker.reviews.count;
     }
     const getButtonNaming = (type) => {
-        
-        switch(type){
+        switch (type) {
             case 'service':
                 return 'Services';
             case 'restaurant':
                 return 'Menu';
             case 'shopping':
                 return 'Items';
-            default: 
+            default:
                 return 'Items';
         }
     }
     const button_naming = getButtonNaming(type);
     return (
-        <TouchableOpacity activeOpacity={.8} onPress={onPress}>
+        <TouchableOpacity activeOpacity={.9} onPress={onPress}>
             <Animated.View style={[styles.cardContainer, style]}>
                 <View style={styles.card}>
-                    <View style={{ flexDirection: 'row', flex: 3 }}>
+                    <Image source={marker.image} style={styles.backgroundCardImage} />
+                    <LinearGradient
+                        colors={['#ffffff', '#000000']}
+                        style={{ position: 'absolute', opacity: .2, top: 0, width: '100%', height: CARD_HEIGHT }}>
+
+                    </LinearGradient>
+                    <View style={{ flex: 3, justifyContent: 'center' }}>
                         <Image source={marker.image} style={styles.cardImage} />
-                        <View style={{ flexDirection: 'column', flex: 1, alignItems: 'center' }}>
+                    </View>
+                    {/* <View style={{ flexDirection: 'column', flex: 1, alignItems: 'center' }}>
                             <TouchableOpacity onPress={isFavorite ? onUnfavoritePress : onFavoritePress}>
-                                <FontAwesome style={{ opacity: .8, paddingVertical: 15 }} underlayColor={'transparent'} name={'heart'} color={isFavorite ? colors.main : '#888'} size={30}/>
+                                <FontAwesome style={{ opacity: .8, paddingVertical: 15 }} underlayColor={'transparent'} name={'heart'} color={isFavorite ? colors.main : '#888'} size={30} />
                             </TouchableOpacity>
                             <TouchableOpacity onPress={onItemsPress} style={{ flex: 1, width: '100%', justifyContent: 'center', backgroundColor: colors.secondary }}>
                                 <Text style={{ textAlign: 'center', color: colors.white }}>View {button_naming}</Text>
                             </TouchableOpacity>
-                        </View>
-
-                    </View>
+                        </View> */}
                     <View style={styles.textContent}>
-                        <Text numberOfLines={1} style={styles.cardtitle}>{marker.title}</Text>
-                        <Text numberOfLines={1} style={styles.cardDescription}>{marker.description}</Text>
-                        <View style={{ flexDirection: 'row', padding: 3, paddingHorizontal: 5 }}>
-                            {_.times(rating, (i) => (<AntDesign key={i} style={{ width: 10 }} size={10} name={'star'} color={colors.main} />))}
-                            {_.times(5 - rating, (i) => (<AntDesign key={i} style={{ width: 10 }} size={10} name={'staro'} color={colors.secondary} />))}
-                            {marker.dist != 0 && <Text style={{ position: 'absolute', right: 5 }}>{DistanceConverter.transform(marker.dist)}</Text>}
+                        <View style={{ marginBottom: 3 }}>
+                            <Text numberOfLines={1} style={styles.cardtitle}>{marker.title}</Text>
                         </View>
+                        <View style={{ flexDirection: 'row', padding: 3, paddingHorizontal: 5 }}>
+                            {_.times(rating, (i) => (<AntDesign key={i} style={{ width: 15 }} size={15} name={'star'} color={colors.main} />))}
+                            {_.times(5 - rating, (i) => (<AntDesign key={i} style={{ width: 15 }} size={15} name={'staro'} color={colors.white} />))}
+                        </View>
+                        {marker.dist != 0 &&
+                            <TouchableOpacity activeOpacity={.8} style={{ backgroundColor: colors.secondary, position: 'absolute', right: 10, padding: 10, bottom: 10, borderRadius: 5, flexDirection: 'row' }}
+                                onPress={() => { Linking.openURL(`http://www.google.com/maps/place/${marker.coordinate.latitude},${marker.coordinate.longitude}`) }}>
+                                <Text style={{ color: colors.white }}>{DistanceConverter.transform(marker.dist)}</Text>
+                                <MaterialCommunityIcons name={'map-marker'} size={15} color={colors.white} style={{ marginLeft: 5 }} />
+                            </TouchableOpacity>}
                     </View>
                 </View>
             </Animated.View>
@@ -398,9 +447,9 @@ const ShopMarker = ({ interpolations, index, selected_index, marker, onPress }) 
         opacity: interpolations[index].opacity,
     };
     return (
-        <MarkerAnimated key={index} coordinate={marker.coordinate} onPress={onPress} title={marker.name} zIndex={ index === selected_index ? 1 : 0 }>
+        <MarkerAnimated coordinate={marker.coordinate} onPress={onPress} title={marker.name} style={{ zIndex: index === selected_index ? 1 : 0 }}>
             <Animated.View style={[styles.markerWrap, opacityStyle, scaleStyle]}>
-                <Image style={{ height: 80, width: 30 }} resizeMode={'contain'} source={Images.mapMarker} />
+                <Image style={{ height: 80, width: 40 }} resizeMode={'contain'} source={Images.mapMarker} />
             </Animated.View>
         </MarkerAnimated>
     );
@@ -414,13 +463,19 @@ const ItemListButton = ({ onPress }) => (
 )
 const mapStateToProps = state => {
     return {
-        mapSetting: state.mapReducer.mapSetting,
-        keywordSearchbar: state.mapReducer.keywordSearchbar,
-        optionbar: state.mapReducer.optionbar
+        mapSetting: state.mapReducer,
+        keywordSearchbar: state.searchbarReducer.keywordSearchbar,
+        optionbar: state.searchbarReducer.optionbar,
+        limit: state.searchbarReducer.keywordSearchbar.limit,
+        skip: state.searchbarReducer.keywordSearchbar.skip,
+        searchKeyword: state.searchbarReducer.keywordSearchbar.searchKeyword,
+        searchTrigger: state.searchbarReducer.searchTrigger,
+        searchShopsByItems: state.shopReducer.searchShopsByItems,
+        searchShopsByName: state.shopReducer.searchShopsByName
     };
 }
 const mapDispatchToProps = dispatch => {
-    return bindActionCreators({ ...MapAction, ...ToastAction, ...ShopAction, ... ItemAction }, dispatch);
+    return bindActionCreators({ ...MapAction, ...SearchbarAction, ...ToastAction, ...ShopAction, ...ItemAction }, dispatch);
 }
 export default connect(mapStateToProps, mapDispatchToProps)(MapModal);
 
@@ -437,11 +492,14 @@ const styles = StyleSheet.create({
         height: '100%'
     },
     scrollView: {
+        height: height / 3,
+        padding: 10,
+    },
+    mapcontrollerbar: {
         position: "absolute",
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 10
     },
     endPadding: {
         paddingRight: width - (CARD_WIDTH),
@@ -455,30 +513,36 @@ const styles = StyleSheet.create({
     },
     cardContainer: {
         padding: 5,
-        height: CARD_HEIGHT,
+        height: '100%',
         width: CARD_WIDTH,
         shadowColor: "#000",
         shadowRadius: 5,
         shadowOpacity: 0.3,
-        shadowOffset: { x: 2, y: -2 },
+        shadowOffset: { width: 2, height: -2 },
         elevation: 2
     },
-    cardImage: {
-        flex: 4,
+    backgroundCardImage: {
         width: '100%',
-        height: '100%',
+        height: CARD_HEIGHT,
+        position: 'absolute',
+        top: 0
+    },
+    cardImage: {
+        width: CARD_HEIGHT / 3,
+        height: CARD_HEIGHT / 3,
         alignSelf: 'center',
-        backgroundColor: 'rgba(0,0,0, .05)'
+        backgroundColor: 'rgb(255, 255, 255)',
+        borderWidth: 5,
+        borderColor: colors.white
     },
     textContent: {
         flex: 1,
+        padding: 10
     },
     cardtitle: {
-        fontSize: 12,
-        marginTop: 5,
+        fontSize: 18,
         fontWeight: "bold",
-        paddingHorizontal: 5,
-        paddingVertical: 2
+        color: colors.white
     },
     cardDescription: {
         fontSize: 12,
@@ -514,6 +578,6 @@ const styles = StyleSheet.create({
         zIndex: 3,
         position: 'absolute',
         top: 30,
-        right: 20
+        left: 20
     }
 })

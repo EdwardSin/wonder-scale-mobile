@@ -1,7 +1,8 @@
-import React from 'react';
-import { StyleSheet, View, TouchableOpacity,  } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import colors from 'assets/variables/colors';
-import { FontAwesome } from '@expo/vector-icons';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+
 
 export default class MapIcon extends React.Component {
     constructor(props) {
@@ -9,10 +10,10 @@ export default class MapIcon extends React.Component {
     }
     render() {
         return (
-            <View  {...this.props} style={[this.props.style, styles.mapIcon]}>
+            <View  {...this.props} style={[styles.mapIcon, this.props.style]}>
                 <TouchableOpacity onPress={this.props.onPress} style={{ width: '100%', height: '100%' }} >
                     <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }} >
-                        <FontAwesome name="map-marker" size={35} color={colors.secondary} />
+                        <MaterialCommunityIcons name="map-marker" size={35} color={colors.secondary} />
                     </View>
                 </TouchableOpacity>
             </View>

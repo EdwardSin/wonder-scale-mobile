@@ -1,11 +1,10 @@
-import colors from 'assets/variables/colors';
-import { EmptyList, LoadingSpinner } from 'components/modals/ws-modals';
+import { EmptyList, LoadingSpinner, Title, WsStatusBar } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
 import React from 'react';
 import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import Image from 'react-native-scalable-image';
 import { connect } from 'react-redux';
-import { getShopWithNewItems } from 'services/shops';
+import { getShopWithNewItems } from 'services/http/public/shops';
 
 const { width } = Dimensions.get('window');
 
@@ -33,10 +32,12 @@ class InfoScreen extends React.Component {
         return (
             this.state.loading ? <LoadingSpinner /> :
                 (<View style={styles.container}>
+                    <WsStatusBar />
+                    <Title style={{ paddingHorizontal: 20 }}>Information</Title>
                     <ScrollView style={{ flex: 1 }}>
-                        {this.state.shop.information_images && this.state.shop.information_images.length > 0 ?
+                        {!!this.state.shop.information_images && this.state.shop.information_images.length > 0 ?
                             <ImageArray images={this.state.shop.information_images} />
-                            : <EmptyList message={'No information banner displayed!'} />
+                            : <EmptyList message={'Information is coming soon!'} />
                         }
                     </ScrollView>
                 </View>)
@@ -60,8 +61,7 @@ export default connect(mapStateToProps)(InfoScreen);
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: colors.greyLighten5
+        flex: 1
     },
     image: {
         resizeMode: 'stretch',

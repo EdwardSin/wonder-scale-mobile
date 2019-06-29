@@ -1,15 +1,15 @@
 import * as ToastAction from 'actions/toast-reducer.action';
 import colors from 'assets/variables/colors';
-import { BottomButton, WsTextInput } from 'components/modals/ws-modals';
-import EmailValidator from 'components/validators/email';
+import { WsButton, WsTextInput } from 'components/modals/ws-modals';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { sendPasswordLinkToEmail } from 'services/users';
+import { sendPasswordLinkToEmail } from 'services/http/public/users';
+import EmailValidator from 'validators/email';
 
 class ForgotPasswordScreen extends React.Component {
-  constructor(props){
+  constructor(props) {
     super(props);
     this.state = {
       email: '',
@@ -19,26 +19,26 @@ class ForgotPasswordScreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <WsTextInput style={{ marginBottom: 10, paddingHorizontal: '10%'}} title={'Email'} 
-              textInput={{onChangeText: this.onEmailChanged, keyboardType: "email-address", value:this.state.email}} />
+        <WsTextInput containerStyle={{ paddingHorizontal: '10%' }} placeholder={'Email'}
+          onChangeText={this.onEmailChanged} keyboardType={"email-address"} value={this.state.email} />
+        <WsButton containerStyle={{ paddingHorizontal: '10%', marginBottom: 20 }} style={{ backgroundColor: colors.secondary }} disabled={this.state.loading} onPress={this.onSendPress}>Submit</WsButton>
         <Text style={styles.text} onPress={this.onBackPress}>Back</Text>
-        <BottomButton disabled={this.state.loading} onPress={this.onSendPress}>Submit</BottomButton>
       </View>
     );
   }
 
   onEmailChanged = (email) => {
-    this.setState({email});
+    this.setState({ email });
   }
   onSendPress = () => {
-    if(!EmailValidator.isValid(this.state.email)){
+    if (!EmailValidator.isValid(this.state.email)) {
       this.props.onToast("Please enter a valid email!");
     }
-    else{
+    else {
       this.sendPasswordLinkToEmail();
     }
   }
-  sendPasswordLinkToEmail(){
+  sendPasswordLinkToEmail() {
     this.setState({ loading: true });
     sendPasswordLinkToEmail(this.state.email, (result) => {
       this.props.onToast(result.message);
@@ -54,7 +54,7 @@ class ForgotPasswordScreen extends React.Component {
   }
 }
 const mapStateToProps = state => {
-  return { };
+  return {};
 }
 const mapDispatchToProps = dispatch => {
   return bindActionCreators({ ...ToastAction }, dispatch);

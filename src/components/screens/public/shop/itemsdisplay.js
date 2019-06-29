@@ -9,11 +9,12 @@ import React from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { followItem, unfollowItem } from 'services/auth-user/follow';
-import { getSearchItemByText } from 'services/items';
+import { follow, unfollow } from 'services/http/auth-user/follow';
+import { getSearchItemByText } from 'services/http/public/items';
 
 let state = { items: [], scrollOffset: 0 };
 class ItemsDisplayScreen extends React.Component {
+    flatListRef;
     constructor(props) {
         super(props);
         this.state = {
@@ -22,7 +23,7 @@ class ItemsDisplayScreen extends React.Component {
             more_loading: false,
             items: state.items,
             searchKeyword: '',
-            offset: 0,
+            skip: 0,
             limit: 10,
             shop_ids: this.props.navigation.state.params.shop_ids
         }
@@ -50,10 +51,11 @@ class ItemsDisplayScreen extends React.Component {
         return _.includes(this.props.favorite_items, this.props.item._id);
     }
     fetchResult = () => {
-        const { offset, limit, items, shop_ids, searchKeyword, has_more, more_loading } = this.state;
+        const { skip, limit, items, shop_ids, searchKeyword, has_more, more_loading } = this.state;
         if (!more_loading && has_more) {
             this.setState({ more_loading: true }, () => {
-                getSearchItemByText({ keyword: searchKeyword, limit: limit, offset: offset, shop_id: shop_ids }, (result) => {
+                //shop_id: shop_ids
+                getSearchItemByText({ query: searchKeyword, limit: limit, skip }, (result) => {
                     if (!result.result.length) {
                         this.setState({ loading: false, has_more: false, more_loading: false });
                         return;
@@ -61,14 +63,14 @@ class ItemsDisplayScreen extends React.Component {
                     if (!result.result) return;
                     this.setState({
                         items: _.uniqBy([...items, ...result.result], '_id'),
-                        offset: offset + 10,
+                        skip: skip + 10,
                         limit: limit + 10,
                         loading: false,
                         more_loading: false,
 
                     }, () => {
                         state.items = this.state.items;
-                        this.props.doneRefreshItem();
+                        //this.props.doneRefreshItem();
                     });
                 }, err => {
                     this.setState({ more_loading: false })
@@ -77,8 +79,9 @@ class ItemsDisplayScreen extends React.Component {
         }
     };
     filterResult = () => {
-        const { searchKeyword, limit, offset, shop_ids } = this.state;
-        getSearchItemByText({ keyword: searchKeyword, limit: limit, offset: offset, shop_id: shop_ids }, (result) => {
+        const { searchKeyword, limit, skip, shop_ids } = this.state;
+        //, shop_id: shop_ids
+        getSearchItemByText({ query: searchKeyword, limit, skip }, (result) => {
             this.setState({
                 items: _.uniqBy([...result.result], '_id'),
                 loading: false
@@ -88,9 +91,7 @@ class ItemsDisplayScreen extends React.Component {
     render() {
         return <View style={styles.container}>
             <WsStatusBar />
-            <View style={{ marginHorizontal: 20, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.greyLighten3 }}>
-                <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Item'} />
-            </View>
+            <WsSearchbar onChangeText={this.onChangeText} placeholder={'Search Item'} />
 
             {!this.state.loading ?
                 <FlatList data={this.state.items}
@@ -105,7 +106,7 @@ class ItemsDisplayScreen extends React.Component {
                         length: 200,
                         offset: 200 * index,
                         index
-                      })}
+                    })}
                     onEndReached={() => { this.fetchResult() }}
                     onEndReachedThreshold={0}
                     onScrollEndDrag={(event) => {
@@ -119,7 +120,7 @@ class ItemsDisplayScreen extends React.Component {
 
     renderItemCard = ({ item, index }) => (
         <ItemCard navigation={this.props.navigation} isFavorite={this.isFavoriteItem} followItem={() => this.followItem(item)}
-                            unfollowItem={() => this.unfollowItem(item)} mapSetting={this.props.mapSetting} item={item} index={index} />
+            unfollowItem={() => this.unfollowItem(item)} mapSetting={this.props.mapSetting} item={item} index={index} />
     )
 
     onChangeText = _.debounce((value) => {
@@ -140,14 +141,14 @@ class ItemsDisplayScreen extends React.Component {
         // }
     }, 500);
     followItem = (item) => {
-        followItem(item._id, () => {
+        follow({ id: item._id, type: 'items' }, () => {
             this.props.onAddFavoriteItemChange(item._id);
         }, (err) => {
             this.props.onToast(err);
         })
     }
     unfollowItem = (item) => {
-        unfollowItem(item._id, () => {
+        unfollow({ id: item._id, type: 'items' }, () => {
             this.props.onRemoveFavoriteItemChange(item._id);
         }, (err) => {
             this.props.onToast(err);
@@ -189,7 +190,7 @@ const UnfollowButton = ({ onPress }) => (
 )
 const mapStateToProps = state => {
     return {
-        mapSetting: state.mapReducer.mapSetting,
+        mapSetting: state.mapReducer,
         favorite_items: state.userReducer.favorite_items,
         isRefreshItem: state.itemReducer.isRefreshItem,
         items: state.itemReducer.items,

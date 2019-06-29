@@ -12,6 +12,7 @@ import InfoScreen from 'components/screens/public/shop/info';
 import ItemsDisplayScreen from 'components/screens/public/shop/itemsdisplay';
 import MapModal from 'components/screens/public/shop/mapmodal';
 import ShopNewItemsScreen from 'components/screens/public/shop/newitems';
+import ShopPromotionScreen from 'components/screens/public/shop/promotion';
 import ShopQRCodeScreen from 'components/screens/public/shop/qrcode';
 import RecruitmentMapModalScreen from 'components/screens/public/shop/recruitment-mapmodal';
 import MainScreenStack from 'components/screens/stacks/mainscreenstack';
@@ -19,6 +20,7 @@ import PublicShopStack from 'components/screens/stacks/publicshopstack';
 import ForgotPasswordScreen from 'components/screens/user/authentication/forgotpassword';
 import LoginScreen from 'components/screens/user/authentication/login';
 import SignUpScreen from 'components/screens/user/authentication/signup';
+import PermissionScreen from 'components/screens/user/permission.screen';
 import ReportReviewScreen from 'components/screens/user/report-review.screen';
 import AboutusScreen from 'components/screens/user/settings/aboutus';
 import CurrencyScreen from 'components/screens/user/settings/currency';
@@ -31,14 +33,14 @@ import SecurityScreen from 'components/screens/user/settings/security';
 import SettingsScreen from 'components/screens/user/settings/settings';
 import VourchersScreen from 'components/screens/user/settings/voucher';
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { HeaderBackButton, createStackNavigator } from 'react-navigation';
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Header, Icon } from 'react-native-elements';
+import { createStackNavigator } from 'react-navigation';
 import StackViewStyleInterpolator from 'react-navigation-stack/src/views/StackView/StackViewStyleInterpolator';
 import { Provider } from 'react-redux';
 import allReducers from 'reducers/index';
 import { createStore } from 'redux';
-import { isSignedIn } from 'services/auth';
-
+import { getAuthentication } from 'services/http/public/auth';
 let navigationOptions = { header: null };
 let navigationOptionsWithBack = {
   headerTintColor: colors.secondary,
@@ -56,8 +58,12 @@ const createNavigator = () => {
         const { state } = navigation;
         return {
           gesturesEnabled: false,
-          title: 'Login',
-          headerLeft: <HeaderBackButton tintColor={'#000'} onPress={() => state.params.onGoBack()} />,
+          header: (<Header
+            backgroundColor={colors.secondary}
+            statusBarProps={{ barStyle: 'light-content' }}
+            leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
+            centerComponent={<Text style={{ color: '#fff', fontSize: 18 }} >Login</Text>}
+          />)
         }
       }
     },
@@ -68,6 +74,13 @@ const createNavigator = () => {
 
         return {
           title: 'Sign Up With Email',
+          header: (<Header
+            backgroundColor={colors.secondary}
+            statusBarProps={{ barStyle: 'light-content' }}
+            leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
+            centerComponent={<Text style={{ color: '#fff', fontSize: 18 }} >Sign Up With Email</Text>}
+            rightComponent={<Text style={{ color: '#fff' }} onPress={() => { state.params.onPressSignUp() }}>Sign Up</Text>}
+          />),
           headerTitleStyle: {
             color: colors.black
           },
@@ -82,9 +95,17 @@ const createNavigator = () => {
     },
     ForgotPassword: {
       screen: ForgotPasswordScreen,
-      navigationOptions: Object.assign({}, navigationOptionsWithBack, {
-        title: 'Forgot Password'
-      })
+      navigationOptions: ({ navigation }) => {
+        return {
+          ...navigationOptionsWithBack,
+          header: (<Header
+            backgroundColor={colors.secondary}
+            statusBarProps={{ barStyle: 'light-content' }}
+            leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
+            centerComponent={<Text style={{ color: '#fff', fontSize: 18 }} >Forgot Password</Text>}
+          />)
+        }
+      }
     },
     AllItems: {
       screen: ShopAllItemsScreen,
@@ -96,23 +117,27 @@ const createNavigator = () => {
     },
     DiscountItems: {
       screen: ShopDiscountItemsScreen,
-      navigationOptions: navigationOptions
+      navigationOptions
     },
     ItemDetail: {
       screen: ItemdetailScreen,
-      navigationOptions: navigationOptions
+      navigationOptions
     },
     ItemsDisplay: {
       screen: ItemsDisplayScreen,
-      navigationOptions: navigationOptions
+      navigationOptions
     },
     RecruitmentDetail: {
       screen: RecruitmentDetailScreen,
-      navigationOptions: navigationOptions
+      navigationOptions
     },
     PromotionDetail: {
       screen: PromotionDetailScreen,
-      navigationOptions: navigationOptions
+      navigationOptions
+    },
+    Promotion: {
+      screen: ShopPromotionScreen,
+      navigationOptions
     },
     QRCode: {
       screen: ShopQRCodeScreen,
@@ -141,8 +166,15 @@ const createNavigator = () => {
         return {
           ...navigationOptionsWithBack,
           title: 'Filter',
-          headerRight: (<TouchableOpacity onPress={() => { state.params.onSearchPressed() }}><View><Text
-            style={{ color: colors.secondary, fontSize: 18, paddingRight: 20 }}>Search</Text></View></TouchableOpacity>)
+          header: (<Header
+            backgroundColor={colors.secondary}
+            statusBarProps={{ barStyle: 'light-content' }}
+            leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
+            centerComponent={<Text style={{ color: '#fff', fontSize: 18 }} >Filter</Text>}
+            rightComponent={<Text style={{ color: '#fff' }} onPress={() => { state.params.onSearchPressed() }}>Search</Text>}
+          />)
+          // headerRight: (<TouchableOpacity onPress={() => { state.params.onSearchPressed() }}><View><Text
+          //   style={{ color: colors.secondary, fontSize: 18, paddingRight: 20 }}>Search</Text></View></TouchableOpacity>)
         }
       }
     },
@@ -179,7 +211,7 @@ const createNavigator = () => {
     },
     Vouchers: {
       screen: VourchersScreen,
-      navigationOptions: {...navigationOptionsWithBack, title: 'Vouchers'}
+      navigationOptions: { ...navigationOptionsWithBack, title: 'Vouchers' }
     },
     Redeem: {
       screen: RedeemScreen,
@@ -187,7 +219,7 @@ const createNavigator = () => {
     },
     Favorites: {
       screen: FavoriteScreen,
-      navigationOptions: {...navigationOptionsWithBack, title: 'Favorites'}
+      navigationOptions: { ...navigationOptionsWithBack, title: 'Favorites' }
     },
     Settings: {
       screen: SettingsScreen,
@@ -275,7 +307,7 @@ const createNavigator = () => {
           return StackViewStyleInterpolator[transition](props);
           //Basically you need to create a condition for individual scenes
 
-          
+
           // if (props.scene.route.routeName === 'MapModal') {
 
           //   // forVertical makes the scene transition for Top to Bottom
@@ -291,7 +323,6 @@ const createNavigator = () => {
           //   // Here, forVertical flows from Top to Bottom
           //   return StackViewStyleInterpolator.forVertical(props);
           // }
-
           // return StackViewStyleInterpolator.forHorizontal(props);
         }
       })
@@ -301,25 +332,19 @@ const store = createStore(allReducers);
 export default class App extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      signedIn: false,
-      checkedSignIn: false
-    };
   }
   async componentDidMount() {
-    isSignedIn()
-      .then(res => {
-        this.setState({ signedIn: res != undefined, checkedSignIn: true })
-      })
-      .catch(err => alert("An error occurred"));
+    StatusBar.setBarStyle('light-content', true);
+    getAuthentication();
   }
+
   render() {
     const { navigation } = this.props;
     const RootStack = createNavigator();
     const App = createAppContainer(RootStack);
     return <Provider store={store}>
       <App navigation={navigation} />
+      <PermissionScreen></PermissionScreen>
       <WsToast />
     </Provider>;
   }

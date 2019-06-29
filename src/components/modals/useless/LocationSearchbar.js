@@ -7,7 +7,6 @@ import React from 'react';
 import { Animated, Button, Dimensions, Easing, Keyboard, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { getNearsShopByPoint } from 'services/shops';
 import WsSearchbar from '../search/WsSearchbar';
 
 const { height, width } = Dimensions.get('window');
@@ -23,7 +22,7 @@ const SearchButton = ({ onPress }) => (
 )
 class LocationSearchbar extends React.Component {
     searchbarControllerHeight = 150;
-    valueChanged = _.debounce((text) => {this.getSearchingLocations(text)}, 500)
+    valueChanged = _.debounce((text) => { this.getSearchingLocations(text) }, 500)
     constructor(props) {
         super(props);
         this.state = {
@@ -68,31 +67,31 @@ class LocationSearchbar extends React.Component {
                 <Animated.ScrollView style={{ paddingHorizontal: 10, height: animation }}
                     keyboardDismissMode="on-drag"
                     keyboardShouldPersistTaps={'always'}>
-                    {_.union([{ key: 'Current Location', name: 'Current Location', locationId: '1' }],
-                        searchingResults.map((x, i) => { return { key: x.address + i, name: x.address, locationId: x.locationId } }))
+                    {_.union([{ key: 'Current Location', address: 'Current Location', state: '', locationId: '1' }],
+                        searchingResults.map((x, i) => { return { key: x.address + i, address: x.address, state: x.state, locationId: x.locationId } }))
                         .map(item => {
                             return (
-                            <TouchableOpacity key={item.locationId} onPress={() => {
-                                Keyboard.dismiss();
-                                this.props.onLocationSearchbarPressed(item.name);
-                                this.geocode(item.locationId, (res) => {
-                                    if(res.Response.View.length){
-                                        let latitude = res.Response.View[0].Result[0].Location.DisplayPosition.Latitude;
-                                        let longitude = res.Response.View[0].Result[0].Location.DisplayPosition.Longitude;
-                                        let coordinates = { latitude, longitude };
-                                        this.props.onCoordinatesChanged({ ...coordinates, latitudeDelta, longitudeDelta });
-                                        this.props.triggerRefresh();
-                                        this.getNearestShops(longitude, latitude, radius);
-                                    }
-                                });
-                                this.props.closeSearchbar();
-                            }
-                            }>
-                                <View style={{ flexDirection: 'row', flex: 1, paddingHorizontal: 10, paddingVertical: 10 }}>
-                                    <FontAwesome name={'map-marker'} size={25} color={colors.secondary} />
-                                    <Text style={{ paddingHorizontal: 10, alignSelf:'center', fontSize: 17 }}>{item.name}</Text>
-                                </View>
-                            </TouchableOpacity>)
+                                <TouchableOpacity key={item.locationId} onPress={() => {
+                                    Keyboard.dismiss();
+                                    this.props.onLocationSearchbarPressed(item.address);
+                                    this.geocode(item.locationId, (res) => {
+                                        if (res.Response.View.length) {
+                                            let latitude = res.Response.View[0].Result[0].Location.DisplayPosition.Latitude;
+                                            let longitude = res.Response.View[0].Result[0].Location.DisplayPosition.Longitude;
+                                            let coordinates = { latitude, longitude };
+                                            this.props.onCoordinatesChanged({ ...coordinates, latitudeDelta, longitudeDelta });
+                                            this.props.triggerRefresh();
+                                            this.getNearestShops(longitude, latitude, radius);
+                                        }
+                                    });
+                                    this.props.closeSearchbar();
+                                }
+                                }>
+                                    <View style={{ flexDirection: 'row', flex: 1, paddingHorizontal: 10, paddingVertical: 10 }}>
+                                        <FontAwesome name={'map-marker'} size={25} color={colors.secondary} />
+                                        <Text style={{ paddingHorizontal: 10, alignSelf: 'center', fontSize: 17 }}>{item.name}</Text>
+                                    </View>
+                                </TouchableOpacity>)
                         })
                     }
                 </Animated.ScrollView>
@@ -139,23 +138,23 @@ class LocationSearchbar extends React.Component {
         );
     }
     getNearestShops = (lng, lat, radius) => {
-        getNearsShopByPoint(lng, lat, radius, (result) => {
-            this.props.onMarkersDisplayed({
-                markers: result.result.map(x => {
-                    return {
-                        _id: x._id,
-                        coordinate:
-                            {
-                                longitude: x.location.coordinates[0],
-                                latitude: x.location.coordinates[1]
-                            },
-                        title: x.name,
-                        description: x.description,
-                        image: { uri: environments.IMAGE_URL + x.profile_image }
-                    }
-                })
-            });
-        })
+        // getNearsShopByPoint({ lng, lat, radius }, {}, (result) => {
+        //     this.props.onMarkersDisplayed({
+        //         markers: result.result.map(x => {
+        //             return {
+        //                 _id: x._id,
+        //                 coordinate:
+        //                 {
+        //                     longitude: x.location.coordinates[0],
+        //                     latitude: x.location.coordinates[1]
+        //                 },
+        //                 title: x.name,
+        //                 description: x.description,
+        //                 image: { uri: environments.IMAGE_URL + x.profile_image }
+        //             }
+        //         })
+        //     });
+        // })
     }
     getSearchingLocations = (query) => {
         fetch('https://autocomplete.geocoder.cit.api.here.com/6.2/suggest.json?' +
@@ -197,10 +196,10 @@ class LocationSearchbar extends React.Component {
 }
 const mapStateToProps = state => {
     return {
-        value: state.mapReducer.locationSearchbar.value,
-        loading: state.mapReducer.locationSearchbar.loading,
-        isSearchbarFocus: state.mapReducer.locationSearchbar.focus,
-        mapSetting: state.mapReducer.mapSetting
+        value: state.searchbarReducer.locationSearchbar.value,
+        loading: state.searchbarReducer.locationSearchbar.loading,
+        isSearchbarFocus: state.searchbarReducer.locationSearchbar.focus,
+        mapSetting: state.mapReducer
     }
 }
 const mapDispatchToProps = dispatch => {

@@ -1,18 +1,18 @@
-import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Entypo, FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import colors from 'assets/variables/colors';
-import StatusHelper from 'components/helpers/statushelper';
-import { EmptyList, LoadingSpinner, WsItemList, WsRefreshControl } from 'components/modals/ws-modals';
+import { LoadingSpinner, WsItemList, WsRefreshControl } from 'components/modals/ws-modals';
 import environments from 'environments/environment';
 import { Constants } from 'expo';
+import OpeningHelper from 'helpers/opening.helper';
+import StatusHelper from 'helpers/statushelper';
 import _ from 'lodash';
 import React from 'react';
-import { Animated, Dimensions, Image, Linking, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Divider } from 'react-native-elements';
+import { Animated, Dimensions, Image, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { connect } from 'react-redux';
-import { followShop, isFollowShop, isLikeShop, likeShop, unfollowShop, unlikeShop } from 'services/auth-user/follow';
-import { getPublicDiscountItemsByShopId, getPublicNewItemsByShopId } from 'services/items';
-import { getPromotionsByShopId } from 'services/promotions';
-import { getShopWithNewItems } from 'services/shops';
+import { followShop, isFollowingShop, isLikeShop, likeShop, unfollowShop, unlikeShop } from 'services/general/auth/follow';
+import { getPublicDiscountItemsByShopId, getPublicNewItemsByShopId } from 'services/http/public/items';
+import { getPromotionsByShopId } from 'services/http/public/promotions';
+import { getShopById } from 'services/http/public/shops';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,6 +33,7 @@ class FrontShopScreen extends React.Component {
       new_items: [],
       discount_items: [],
       shop: {},
+      displayOperationHours: false,
       flip: false,
       shop_id: this.props.shop_id
     }
@@ -43,49 +44,12 @@ class FrontShopScreen extends React.Component {
     this.getPublicDiscountItemsByShopId();
     this.getPromotionsByShopId();
     this.getIsLikeShop();
-    this.getIsFollowShop();
+    this.getIsFollowingShop();
   }
 
 
   render() {
-    const HEADER_MAX_HEIGHT = 600;
-    const HEADER_MIN_HEIGHT = 60;
-    const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
-
-    const TEXT_MAX_HEIGHT = 30;
-    const TEXT_MIN_HEIGHT = 0;
-    const TEXT_SCROLL_DISTANCE = TEXT_MAX_HEIGHT - TEXT_MIN_HEIGHT;
-
-    const SEARCHBAR_MAX_WIDTH = 110;
-    const SEARCHBAR_MIN_WIDTH = 35;
-    const SEARCHBAR_SCROLL_DISTANCE = SEARCHBAR_MAX_WIDTH - SEARCHBAR_MIN_WIDTH;
-
-    const headerHeight = this.state.scrollY.interpolate({
-      inputRange: [0, HEADER_SCROLL_DISTANCE],
-      outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
-      extrapolate: 'clamp',
-    });
-    const textOpacity = this.state.scrollY.interpolate({
-      inputRange: [0, TEXT_SCROLL_DISTANCE / 2, TEXT_SCROLL_DISTANCE],
-      outputRange: [1, .5, 0],
-      extrapolate: 'clamp',
-    });
-    const imageTranslate = this.state.scrollY.interpolate({
-      inputRange: [0, HEADER_SCROLL_DISTANCE],
-      outputRange: [0, -50],
-      extrapolate: 'clamp',
-    });
-    const searchbarWidth = this.state.scrollY.interpolate({
-      inputRange: [0, HEADER_SCROLL_DISTANCE / 4],
-      outputRange: [SEARCHBAR_MAX_WIDTH, SEARCHBAR_MIN_WIDTH],
-      extrapolate: 'clamp',
-    })
-
-    const backgroundColorTransform = this.state.scrollY.interpolate({
-      inputRange: [0, HEADER_SCROLL_DISTANCE / 4],
-      outputRange: ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 1)'],
-      extrapolate: 'clamp'
-    })
+    let { shop } = this.state;
     return (
       this.state.loading ? <LoadingSpinner /> :
         (<View style={styles.container}>
@@ -93,97 +57,67 @@ class FrontShopScreen extends React.Component {
             refreshControl={<WsRefreshControl refreshing={this.state.refreshing} onRefresh={this.handleRefresh.bind(this)} />}
             onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: this.state.scrollY } } }])}>
             {this.renderProfileContainer()}
-            <Navigator searchbarWidth={searchbarWidth}
-              backgroundColorTransform={backgroundColorTransform}
-              onPress={this.navigateToSearchItemBar}
-              onHomePress={this.navigateToHome}
-              onInfoPress={this.navigateToInfo}
+            <Navigator
+              onAboutPress={this.navigateToAbout}
+              onReviewPress={this.navigateToReview}
+              onPromotionPress={this.navigateToPromotion}
               onAllItemsPress={this.navigateToAllItems}
             />
             {this.renderContentContainer()}
+
+            {this.renderAboutContainer(shop)}
           </ScrollView>
+          {this.renderSideContainer()}
+          {/* <MessengerButton onPress={() => { }} /> */}
         </View>)
     );
   }
-  renderProfile = () => {
-    return (<View>
-      {this.state.shop.phone && this.state.shop.phone.map((tel, i) =>
-        <TouchableOpacity style={{ paddingVertical: 15 }} key={i} onPress={() => { Linking.openURL(`telprompt:${tel}`) }}>
-          <View style={{ flexDirection: 'row', paddingVertical: 5 }}>
-            <FontAwesome style={{ paddingHorizontal: 10 }} name={'phone'} size={20} />
-            <Text style={{ fontSize: 15 }}>{tel}</Text>
-          </View>
-        </TouchableOpacity>
-      )}
-      <Divider />
-      {
-        this.state.shop.website && this.state.shop.website.map((website, i) =>
-          <TouchableOpacity style={{ paddingVertical: 15 }} key={i} onPress={() => { Linking.openURL(`${website}`) }}>
-            <View style={{ flexDirection: 'row', paddingVertical: 5 }}>
-              <FontAwesome style={{ paddingHorizontal: 10 }} name={'globe'} size={20} />
-              { website != '' ? <Text style={{ fontSize: 15 }}>{website}</Text> : <Text>-</Text>}
-            </View>
-          </TouchableOpacity>
-        )
-      }
-      <Divider />
-      {
-        this.state.shop.email && this.state.shop.email.map((email, i) =>
-          <TouchableOpacity style={{ paddingVertical: 15 }} key={i} onPress={() => { Linking.openURL(`mailto:${email}`) }}>
-            <View style={{ flexDirection: 'row', paddingVertical: 5 }}>
-              <FontAwesome style={{ paddingHorizontal: 10 }} name={'envelope'} size={20} />
-              <Text style={{ fontSize: 15 }}>{email}</Text>
-            </View>
-          </TouchableOpacity>
-        )
-      }
+  renderSideContainer = () => {
+    let { shop, isfollow, islike } = this.state;
+
+    return (<View style={{ position: 'absolute', right: 0, top: 90, alignItems: 'flex-end' }}>
+      {shop.recruitments && shop.recruitments.length > 0 && <TouchableOpacity activeOpacity={.5} style={{
+        paddingHorizontal: 15, paddingVertical: 10,
+        borderBottomStartRadius: 20,
+        borderTopStartRadius: 20, backgroundColor: colors.gold,
+        shadowColor: colors.grey, alignItems: 'center',
+        shadowOpacity: 1, shadowOffset: { width: 0, height: 2 }, flexDirection: 'row'
+      }} onPress={() => { this.props.navigation.navigate('Recruitment') }}>
+        <FontAwesome name={'suitcase'} style={{ alignItems: 'center', justifyContent: 'center', paddingRight: 5 }} size={25} />
+        <Text style={{ fontSize: 15 }}>{'Hiring'}</Text>
+      </TouchableOpacity>}
+      <FollowTag follow={isfollow} onFollowPress={this.follow} onUnfollowPress={this.unfollow} />
+      <LikeTag like={islike} number_of_like={shop.like} onLikePress={this.like} onUnlikePress={this.unlike} />
     </View>)
   }
   renderProfileContainer = () => {
     const HEADER_MAX_HEIGHT = height;
     const HEADER_MIN_HEIGHT = 60;
     const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+    const { shop } = this.state;
     const imageOpacity = this.state.scrollY.interpolate({
-      inputRange: [0, HEADER_SCROLL_DISTANCE / 4],
+      inputRange: [0, HEADER_SCROLL_DISTANCE / 3],
       outputRange: [1, 0],
       extrapolate: 'clamp',
     });
 
-    const backgroundColorTransform = this.state.scrollY.interpolate({
-      inputRange: [0, HEADER_SCROLL_DISTANCE / 4],
-      outputRange: ['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 1)'],
-      extrapolate: 'clamp'
-    })
-    let isCurrentlyOpen = this.getOpeningInfo();
-
     return (
       <View>
-        <BackgroundView opacity={imageOpacity} item={this.state.shop} />
-        <Animated.View style={{ backgroundColor: backgroundColorTransform }}>
-          <View style={{ flexDirection: 'row', paddingHorizontal: 10, paddingTop: Constants.statusBarHeight }}>
+        <BackgroundView opacity={imageOpacity} item={shop} />
+        <Animated.View >
+          <View style={{ flexDirection: 'row', width, paddingHorizontal: 10, paddingTop: Constants.statusBarHeight }}>
             <BackButton onPress={() => { this.props.navigation.goBack(null) }} />
-            <ShareButton onPress={this.onSharePress.bind(this)} />
-            {this.state.isfollow ? <UnfollowButton onPress={this.unfollowShop} /> : <FollowButton onPress={this.followShop} />}
-          </View>
-          <View style={{ marginTop: 200, alignItems: 'center' }}>
-            <ProfileImage item={this.state.shop} onPress={() => { this.props.navigation.navigate('QRCode') }} />
-            <View style={{ paddingVertical: 10 }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold' }}>{this.state.shop.name}</Text>
-              <Text style={{ fontSize: 15, textAlign: 'center', marginBottom: 5 }}>@{this.state.shop.username}</Text>
-              <OpeningInfoTag label={isCurrentlyOpen ? 'Opening' : 'Closed'} isOpen={isCurrentlyOpen} />
+            <View style={{ flex: 1, justifyContent: 'flex-end', flexDirection: 'row' }}>
+              <MarkerButton onPress={() => { this.linkToMap(shop) }} />
+              <QrcodeButton onPress={() => { this.props.navigation.navigate('QRCode') }} />
+              <ShareButton onPress={this.onSharePress.bind(this)} />
             </View>
           </View>
-
-          <View style={{ width: '100%', alignItems: 'center', paddingHorizontal: 10 }}>
-            <View style={{ flexDirection: 'row', marginTop: 10 }} >
-              {this.state.islike ? <UnlikeButton onPress={this.unlikeShop} /> : <LikeButton onPress={this.likeShop} />}
-              <MarkerButton onPress={() => {
-                Linking.openURL(`http://www.google.com/maps/place/${this.state.shop.location.coordinates[1]},${this.state.shop.location.coordinates[0]}`);
-              }} />
-              <InfoButton onPress={() => {
-                this.setState({ infoModalVisible: true });
-              }} />
-              <QrcodeButton onPress={() => { this.props.navigation.navigate('QRCode') }} />
+          <View style={{ marginVertical: 20, marginBottom: 40, alignItems: 'center', position: 'relative' }}>
+            <ProfileImage item={shop} onPress={() => { this.props.navigation.navigate('QRCode') }} />
+            <View style={{ paddingVertical: 5 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.white }}>{shop.name}</Text>
+              <Text style={{ fontSize: 15, textAlign: 'center', marginBottom: 5, color: colors.white }}>@{shop.username}</Text>
             </View>
           </View>
         </Animated.View>
@@ -191,19 +125,11 @@ class FrontShopScreen extends React.Component {
     )
   }
   renderContentContainer = () => (
-    <View style={{ width: width }}>
-      <View style={{ backgroundColor: colors.greyLighten3 }}>
+    <View style={{ width }}>
+      <View>
         {this.state.loading && <LoadingSpinner />}
-        {false && this.state.promotions && this.state.promotions.map((promotion, index) => (
-          <View key={index}>
-            <Text>{promotion.title}</Text>
-            <TouchableOpacity>
-              <Text>Claim</Text>
-            </TouchableOpacity>
-          </View>)
-        )}
         {this.state.new_items.length > 0 && (
-          <View style={{ paddingTop: 20, paddingBottom: 10 }}>
+          <View style={{ paddingTop: 10, marginTop: 10, backgroundColor: colors.white }}>
             <View style={{ flexDirection: 'row' }}>
               <Header>New</Header>
               <MoreButton onPress={this.navigateToNewItems} />
@@ -214,7 +140,7 @@ class FrontShopScreen extends React.Component {
         {this.state.loading && <LoadingSpinner />}
         {
           this.state.discount_items.length > 0 && (
-            <View style={{ paddingTop: 10, paddingBottom: 20 }}>
+            <View style={{ paddingTop: 10, marginTop: 10, backgroundColor: colors.white }}>
               <View style={{ flexDirection: 'row' }}>
                 <Header>Discount</Header>
                 <MoreButton onPress={this.navigateToDiscountItems} />
@@ -224,24 +150,84 @@ class FrontShopScreen extends React.Component {
           )
         }
       </View>
-      {!this.state.new_items.length && !this.state.discount_items.length && <EmptyList message={'Shop is new and updating!'} />}
-      <Modal visible={this.state.infoModalVisible} transparent={true} animationType={'fade'}>
-        <TouchableOpacity activeOpacity={1} onPress={() => { this.setState({ infoModalVisible: false }) }}>
-          <View style={{ backgroundColor: 'rgba(0, 0, 0, .6)', height: '100%' }}>
-            <View style={{
-              width: width - 60, borderRadius: 5, backgroundColor: colors.white,
-              paddingVertical: 10, paddingHorizontal: 20, marginHorizontal: 30, marginVertical: (height - 350) / 2
-            }}>
-              {this.renderProfile()}
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </View>
   )
+  renderAboutContainer = (shop) => {
+    let isCurrentlyOpen = this.getOpeningInfo();
+    return (<View style={{ marginVertical: 10, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.white }}>
+      {
+        !!shop && !!shop.opening_info_type && <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 10 }}>
+          <View style={{ width: 70 }}>
+            <Text style={{ paddingRight: 10 }}>Hours:</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            {shop.opening_info_type != 'selected_hours' && <Text style={{ paddingLeft: 10, flexWrap: 'wrap', flex: 1 }}>
+              {OpeningHelper.getOpeningHour(shop)}</Text>}
+            {shop.opening_info_type == 'selected_hours' &&
+              OpeningHelper.getOpeningHour(shop).map((opening_hour, index) =>
+                <Text key={index} style={{ paddingLeft: 10, flexWrap: 'wrap', flex: 1 }} onPress={() => { this.setState({ displayOperationHours: !this.state.displayOperationHours }) }}>
+                  ({OpeningHelper.days[new Date().getDay()]}) {opening_hour.opening_hour} - {opening_hour.close_hour}
+                </Text>)
+            }
+            <TouchableOpacity onPress={() => { shop.opening_info_type == 'selected_hours' && this.setState({ displayOperationHours: !this.state.displayOperationHours }) }}>
+              <OpeningInfoTag label={isCurrentlyOpen ? 'Opening' : 'Closed'} isOpen={isCurrentlyOpen} />
+            </TouchableOpacity>
+            {this.state.displayOperationHours && <View style={{ marginTop: 5, paddingTop: 5, borderTopWidth: 1, borderTopColor: colors.greyLighten2 }}>
+              {OpeningHelper.getShopOpeningHours(shop).map((openingHour, index) => <View key={index} style={{ flexDirection: 'row' }}>
+                <View style={{ width: 100, marginRight: 10 }}>
+                  <Text>{openingHour.day}</Text>
+                </View>{openingHour.time.map((time, index) => <Text key={index}>{openingHour.selected ? `${time.opening_hour}-${time.close_hour}` : 'Closed'}</Text>)}
+              </View>)}
+            </View>}
+          </View>
+        </View>
+      }
+      {!!shop && !!shop.full_address && <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 10 }}>
+        <View style={{ width: 70 }}>
+          <Text style={{ paddingRight: 10 }}>Address:</Text>
+        </View>
+        <Text onPress={() => { this.linkToMap(shop) }} style={{ paddingLeft: 10, flexWrap: 'wrap', flex: 1 }}>
+          {shop.full_address.address} {shop.full_address.postcode} {shop.full_address.state} {shop.full_address.country}</Text>
+      </View>
+      }
+      {!!shop && !!shop.email && shop.email.length > 0 && <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 10 }}>
+        <View style={{ width: 70 }}>
+          <Text style={{ paddingRight: 10 }}>Email:</Text>
+        </View>
+        {shop.email.map((email, index) => (<Text onPress={() => { this.linkToEmail(email) }} key={index} style={{ paddingLeft: 10 }}>{email}</Text>))}
+      </View>}
+      {!!shop && !!shop.phone && shop.phone.length > 0 && <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 10 }}>
+        <View style={{ width: 70 }}>
+          <Text style={{ paddingRight: 10 }}>Tel:</Text>
+        </View>
+        {shop.phone.map((phone, index) => (<Text onPress={() => { this.linkToTel(phone) }} key={index} style={{ paddingLeft: 10 }}>{phone}</Text>))}
+      </View>}
+      {!!shop && !!shop.website && shop.website.length > 0 && <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 10 }}>
+        <View style={{ width: 70 }}>
+          <Text style={{ paddingRight: 10 }}>Website:</Text>
+        </View>
+        {shop.website.map((website, index) => (<Text onPress={() => { this.linkToUrl(website) }} key={index} style={{ paddingLeft: 10 }}>{website}</Text>))}
+      </View>}
+      {!!shop && !!shop.media && shop.media.length > 0 && <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#eee', paddingVertical: 10 }}>
+        <View style={{ width: 70 }}>
+          <Text style={{ paddingRight: 10, fontSize: 12 }}>Social Website:</Text>
+        </View>
+        {shop.media.map((media, index) => {
+          return <View key={index}>
+            {media.type == 'facebook' && <Text onPress={() => { this.linkToUrl(`https://www.facebook.com/${media.value}`) }} style={{ paddingLeft: 10 }}>Facebook: {media.value}</Text>}
+            {media.type == 'instagram' && <Text onPress={() => { this.linkToUrl(`https://www.instagram.com/${media.value}`) }} style={{ paddingLeft: 10 }}>Instagram: {media.value}</Text>}
+            {media.type == 'twitter' && <Text onPress={() => { this.linkToUrl(`https://www.twitter.com/${media.value}`) }} style={{ paddingLeft: 10 }}>Twitter: {media.value}</Text>}
+            {media.type == 'whatsapp' && <Text onPress={() => { this.linkToUrl(`https://api.whatsapp.com/send?phone=${media.value}`) }} style={{ paddingLeft: 10 }}>Whatsapp: {media.value}</Text>}
+            {media.type == 'wechat' && <Text onPress={() => { }} style={{ paddingLeft: 10 }}>Wechat: {media.value}</Text>}
+            {media.type == 'weibo' && <Text onPress={() => { }} style={{ paddingLeft: 10 }}>Weibo: {media.value}</Text>}
+          </View>
+        })}
+      </View>}
+    </View>)
+  }
   getShop = () => {
     this.setState({ loading: true });
-    getShopWithNewItems(this.state.shop_id, (result) => {
+    getShopById(this.state.shop_id, (result) => {
       this.setState({ shop: result, loading: false, refreshing: false });
     })
   }
@@ -263,20 +249,6 @@ class FrontShopScreen extends React.Component {
       });
     })
   }
-
-  getIsLikeShop = () => {
-    this.setState({ loading: true });
-    isLikeShop(this.state.shop_id, (result) => {
-      this.setState({ islike: result.like });
-    }, (err) => { })
-  }
-
-  getIsFollowShop = () => {
-    this.setState({ loading: true });
-    isFollowShop(this.state.shop_id, (result) => {
-      this.setState({ isfollow: result.follow });
-    }, (err) => { })
-  }
   getPromotionsByShopId = () => {
     getPromotionsByShopId(this.state.shop_id, (result) => {
       this.setState({ promotions: result });
@@ -290,15 +262,28 @@ class FrontShopScreen extends React.Component {
         this.getPublicNewItemsByShopId();
         this.getPublicDiscountItemsByShopId();
         this.getPromotionsByShopId();
-        this.getIsLikeShop();
-        this.getIsFollowShop();
       })
   }
-  navigateToSearchItemBar = () => {
-    this.props.navigation.navigate('AllItems');
+  linkToMap = (shop) => {
+    Linking.openURL(`http://www.google.com/maps/place/${shop.location.coordinates[1]},${shop.location.coordinates[0]}`);
   }
-  navigateToHome = () => {
-    this.props.navigation.navigate('Home');
+  linkToTel = (tel) => {
+    Linking.openURL(`telprompt:${tel}`)
+  }
+  linkToEmail = (email) => {
+    Linking.openURL(`mailto:${email}`)
+  }
+  linkToUrl = (url) => {
+    Linking.openURL(`${url}`)
+  }
+  navigateToPromotion = () => {
+    this.props.navigation.navigate('Promotion');
+  }
+  navigateToAbout = () => {
+    this.props.navigation.navigate('About');
+  }
+  navigateToReview = () => {
+    this.props.navigation.navigate('Review');
   }
   navigateToInfo = () => {
     this.props.navigation.navigate('Info');
@@ -312,46 +297,41 @@ class FrontShopScreen extends React.Component {
   navigateToNewItems = () => {
     this.props.navigation.navigate('NewItems');
   }
-  
-  onSharePress(){
+  onSharePress() {
     Share.share({
-        message: `${this.state.shop.description}`,
-        url: `https://www.wonderscale.com/${this.state.shop.username}?ref=${this.state.shop_id}`,
-        title: `Shared Shop: ${this.state.shop.name}`
+      message: `${this.state.shop.description}`,
+      url: `https://www.wonderscale.com/${this.state.shop.username}?ref=${this.state.shop_id}`,
+      title: `Shared Shop: ${this.state.shop.name}`
     })
-}    
-unfollowShop = () => {
-  unfollowShop(this.state.shop._id, (result) => {
-    if (!result.follow) {
-      this.setState({ isfollow: false })
+  }
+  getIsLikeShop = async () => {
+    let result = await isLikeShop(this.state.shop_id);
+    this.setState({ islike: result });
+  }
+  getIsFollowingShop = async () => {
+    let result = await isFollowingShop(this.state.shop_id);
+    this.setState({ isfollow: result });
+  }
+  follow = async () => {
+    let result = await followShop(this.state.shop_id);
+    this.setState({ isfollow: result });
+  }
+  unfollow = async () => {
+    let result = await unfollowShop(this.state.shop_id);
+    this.setState({ isfollow: result });
+  }
+  like = async () => {
+    let result = await likeShop(this.state.shop_id);
+    if (result) {
+      this.setState({ islike: result, shop: { ...this.state.shop, like: this.state.shop.like + 1 } });
     }
-  }, (err) => {
-    this.props.navigation.navigate("Login")
-  })
-}
-followShop = () => {
-  followShop(this.state.shop._id, (result) => {
-    if (result.follow) {
-      this.setState({ isfollow: true })
+  }
+  unlike = async () => {
+    let result = await unlikeShop(this.state.shop_id);
+    if (!result) {
+      this.setState({ islike: result, shop: { ...this.state.shop, like: this.state.shop.like - 1 } });
     }
-  }, (err) => {
-    this.props.navigation.navigate("Login")
-  })
-}
-unlikeShop = () => {
-  unlikeShop(this.state.shop._id, (result) => {
-    if (!result.like) {
-      this.setState({ islike: false })
-    }
-  })
-}
-likeShop = () => {
-  likeShop(this.state.shop._id, (result) => {
-    if (result.like) {
-      this.setState({ islike: true });
-    }
-  })
-}
+  }
   // #endregion
   getOpeningInfo = () => {
     let opening_info_type = this.state.shop.opening_info_type;
@@ -361,117 +341,103 @@ likeShop = () => {
   }
 }
 
-const LikeButton = ({ onPress }) => (<TouchableOpacity onPress={onPress}>
-  <View style={{ paddingRight: 5 }}>
-    <FontAwesome name={'thumbs-o-up'} size={25} />
-  </View>
-</TouchableOpacity>)
-
-const UnlikeButton = ({ onPress }) => (<TouchableOpacity onPress={onPress}>
-  <View style={{ paddingRight: 5 }}>
-    <FontAwesome name={'thumbs-up'} color={colors.main} size={25} />
-  </View>
-</TouchableOpacity>)
 const MoreButton = ({ onPress }) => (
-  <TouchableOpacity style={{ marginLeft: 'auto', marginRight: 20, marginTop: 3 }} onPress={onPress} >
-    <View style={{ borderRadius: 15, backgroundColor: 'rgba(255,255,255, 1)', justifyContent: 'center' }}>
-      <Text style={{ paddingVertical: 4, paddingHorizontal: 10, textAlign: 'center' }}>More</Text>
-    </View>
+  <TouchableOpacity style={{ marginLeft: 'auto', marginRight: 15, borderRadius: 15, backgroundColor: '#eee', justifyContent: 'center' }} onPress={onPress} >
+    <Text style={{ paddingVertical: 2, paddingHorizontal: 10, textAlign: 'center' }}>More</Text>
   </TouchableOpacity>
 )
 const ShareButton = ({ onPress }) => (
-  <TouchableOpacity onPress={onPress} style={{ position: 'absolute', top: Constants.statusBarHeight + 5 , height: 25, right: 85, borderRadius: 15, borderColor: 'rgba(255,255,255,.5)', backgroundColor: 'rgba(255,255,255,.5)', justifyContent: 'center' }}>
-    <View>
-      <Text style={{ paddingHorizontal: 10, textAlign: 'center' }}>Share</Text>
-    </View>
-  </TouchableOpacity>
-)
-const FollowButton = ({ onPress }) => (
-  <TouchableOpacity onPress={onPress} style={{ position: 'absolute', top: Constants.statusBarHeight + 5 , height: 25, right: 10, borderRadius: 15, borderColor: 'rgba(255,255,255,.5)', backgroundColor: 'rgba(255,255,255,.5)', justifyContent: 'center' }}>
-    <View>
-      <Text style={{ paddingHorizontal: 10, textAlign: 'center' }}>Follow</Text>
-    </View>
-  </TouchableOpacity>
-)
-
-const UnfollowButton = ({ onPress }) => (
-  <TouchableOpacity onPress={onPress} style={{ position: 'absolute', top: Constants.statusBarHeight + 5, height: 25, right: 10, borderRadius: 15, borderColor: colors.main, backgroundColor: 'rgba(34,34,34,.8)', justifyContent: 'center' }}>
-    <View>
-      <Text style={{ paddingTop: 4, paddingHorizontal: 10, textAlign: 'center', color: colors.white }}>Following</Text>
-    </View>
-  </TouchableOpacity>)
-const QrcodeButton = ({ onPress }) => (
   <TouchableOpacity onPress={onPress}>
-    <View style={{ paddingHorizontal: 5 }}>
-      <MaterialCommunityIcons size={25} name={`qrcode`} />
-    </View>
+    <Entypo name={'share-alternative'} size={33} color={colors.white} />
+  </TouchableOpacity>
+)
+const QrcodeButton = ({ onPress }) => (
+  <TouchableOpacity onPress={onPress} style={{ paddingHorizontal: 5 }}>
+    <MaterialCommunityIcons size={35} color={'#fff'} name={`qrcode`} />
   </TouchableOpacity>
 )
 const MarkerButton = ({ onPress }) => (
-  <TouchableOpacity onPress={onPress}>
-    <View style={{ paddingHorizontal: 5 }}>
-      <MaterialCommunityIcons name={'map-marker'} size={26} />
-    </View>
+  <TouchableOpacity onPress={onPress} style={{ paddingHorizontal: 5 }}>
+    <MaterialCommunityIcons name={'map-marker'} size={35} color={colors.white} />
   </TouchableOpacity>
 )
-const InfoButton = ({ onPress }) => (
-  <TouchableOpacity onPress={onPress}>
-    <View style={{ paddingHorizontal: 5 }}>
-      <MaterialCommunityIcons name={'information-outline'} size={26} />
-    </View>
+const FollowTag = ({ follow, onFollowPress, onUnfollowPress }) => (
+  <TouchableOpacity onPress={() => { follow ? onUnfollowPress() : onFollowPress() }} style={{ marginVertical: 10, backgroundColor: colors.secondary, paddingVertical: 10, paddingLeft: 15, paddingRight: 5, borderTopStartRadius: 20, borderBottomStartRadius: 20 }}>
+    <Text style={{ color: follow ? colors.gold : colors.white }}>{follow ? 'Following' : 'Follow'}</Text>
+  </TouchableOpacity>
+)
+const LikeTag = ({ like, number_of_like, onLikePress, onUnlikePress }) => (
+  <TouchableOpacity onPress={() => { like ? onUnlikePress() : onLikePress() }} style={{ flexDirection: 'row', backgroundColor: colors.secondary, paddingVertical: 10, paddingLeft: 15, paddingRight: 5, borderTopStartRadius: 20, borderBottomStartRadius: 20 }}>
+    <FontAwesome name={`thumbs-o-up`} size={18} color={like ? colors.gold : colors.white} style={{ marginRight: 8 }}>
+    </FontAwesome>
+    <Text style={{ color: like ? colors.gold : colors.white }}>{number_of_like}</Text>
   </TouchableOpacity>
 )
 const BackButton = ({ onPress }) => (
   <TouchableOpacity onPress={onPress}>
-    <Ionicons color={'rgba(255,255,255,.5)'} containerStyle={{ position: 'absolute', top: Constants.statusBarHeight + 5, left: 10 }} size={30} name={'ios-arrow-dropleft'} />
+    <MaterialCommunityIcons color={colors.white} size={26} name={'chevron-left'} />
   </TouchableOpacity>)
 
 const OpeningInfoTag = ({ label, isOpen }) => (
-  <View style={{ alignItems: 'center' }}>
+  <View style={{ marginHorizontal: 10, marginVertical: 5, alignItems: 'flex-start' }}>
     <View style={{ backgroundColor: isOpen ? colors.greenLighten1 : colors.red, borderRadius: 10, paddingHorizontal: 8 }}>
-      <Text style={{ fontSize: 16, color: colors.white }}>{label}</Text>
+      <Text style={{ fontSize: 13, color: colors.white }}>{label}</Text>
     </View>
   </View>
 )
+const MessengerButton = ({ onPress }) => {
+  return (<TouchableOpacity activeOpacity={.7} onPress={onPress} style={{
+    width: 60, height: 60, borderRadius: 30,
+    alignItems: 'center', justifyContent: 'center',
+    shadowOpacity: 1, shadowOffset: { width: 0, height: 2 },
+    backgroundColor: colors.secondary, position: 'absolute', bottom: 20, right: 20
+  }}>
+    <Ionicons name={'md-chatbubbles'} size={30} color={colors.white} />
+  </TouchableOpacity>)
+}
 const BackgroundView = ({ opacity, item }) => {
-  return (<Animated.View style={{ opacity}}>
-    <View style={{ height: 300, position: 'absolute', top: 0, width: '100%', backgroundColor: colors.greyLighten3 }}>
-      {item.banner_image != '' && <Image style={{ width: '100%', height: '100%', }} source={{ uri: environments.IMAGE_URL + item.banner_image }} />}
-    </View>
+  let url = '';
+  if (item && item.banner_image) {
+    url = item.banner_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + item.banner_image : item.banner_image;
+  }
+  return (<Animated.View style={{
+    opacity, height: 300, position: 'absolute', top: 0, width: '100%',
+    backgroundColor: colors.greyLighten2
+  }}>
+    {url != '' && <Image style={{ width: '100%', height: 300 }} defaultSource={environments.Image.Default_Banner} source={{ uri: url }} />}
   </Animated.View>
-)}
-const ProfileImage = ({ item, onPress }) => (
-  <TouchableOpacity onPress={onPress}>
-    <Image style={{ width: 100, height: 100, borderRadius: 50 }} source={{ uri: environments.IMAGE_URL + item.profile_image }} />
-  </TouchableOpacity>
-)
+  )
+}
+const ProfileImage = ({ item, onPress }) => {
+  let url = '';
+  if (item && item.profile_image) {
+    url = item.profile_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + item.profile_image : item.profile_image;
+  }
+  return (
+    <TouchableOpacity onPress={onPress}>
+      {url != '' && <Image style={{ width: 100, height: 100, borderRadius: 50 }} defaultSource={environments.Image.Default_Shop} source={{ uri: url }} />}
+    </TouchableOpacity>
+  )
+}
 
 const NavItem = ({ onPress, label }) => (
-  <TouchableOpacity onPress={onPress}>
-    <View style={{ paddingHorizontal: 15, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 18, textAlign: 'center' }}>{label}</Text>
-    </View>
+  <TouchableOpacity onPress={onPress} style={{ paddingHorizontal: 13 }}>
+    <Text style={{ fontSize: 16, textAlign: 'center' }}>{label}</Text>
   </TouchableOpacity>
 )
 
-const Navigator = ({ searchbarWidth, backgroundColorTransform, onPress, onHomePress, onInfoPress, onAllItemsPress }) => (
-  <Animated.ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: backgroundColorTransform, }}>
-    <View style={{ flexDirection: 'row', flex: 1, justifyContent: 'center', alignItems: 'center', padding: 10, paddingTop: 20 }}>
-      <TouchableOpacity onPress={onPress}>
-        <Animated.View style={{
-          width: 110, overflow: 'hidden', flexDirection: 'row', height: 35,
-          justifyContent: 'center', alignItems: 'center',
-          borderRadius: 15, borderColor: 'rgba(255,255,255,.5)', backgroundColor: '#88888822'
-        }}>
-          <Ionicons name='ios-search' size={18} />
-          <Text style={{ width: 80, paddingVertical: 5, textAlign: 'center' }}>Search...</Text>
-        </Animated.View>
-      </TouchableOpacity>
-      <NavItem onPress={onHomePress} label={'Home'} />
-      <NavItem onPress={onAllItemsPress} label={'All Items'} />
-      <NavItem onPress={onInfoPress} label={'Info'} />
-    </View>
-  </Animated.ScrollView>)
+const Navigator = ({ onPromotionPress, onAboutPress, onReviewPress, onAllItemsPress }) => (
+  <View style={{
+    flexDirection: 'row', flex: 1, justifyContent: 'center',
+    borderBottomWidth: 1, borderBottomColor: '#eee',
+    backgroundColor: colors.white, alignItems: 'center', paddingHorizontal: 10, paddingVertical: 15,
+  }}>
+    <NavItem onPress={onAboutPress} label={'About'} />
+    <NavItem onPress={onAllItemsPress} label={'All Items'} />
+    {/* <NavItem onPress={onPromotionPress} label={'Promotions'} /> */}
+    <NavItem onPress={onReviewPress} label={'Reviews'} />
+  </View>
+)
 
 const ItemsList = ({ items, navigation }) => (
   <ScrollView horizontal
@@ -479,14 +445,14 @@ const ItemsList = ({ items, navigation }) => (
     scrollEventThrottle={1}
     snapToAlignment={'start'}
     decelerationRate={'fast'}
-    showsHorizontalScrollIndicator={false} style={{ padding: 10 }}>
+    showsHorizontalScrollIndicator={false} style={{ paddingBottom: 10, paddingTop: 5 }}>
     <View style={{ flexDirection: 'row', paddingRight: 20 }}>
       {items.map((item, i) => (<WsItemList key={i} style={{ width: width * 3 / 4 }} item={item} navigation={navigation} />))}
     </View>
   </ScrollView>
 )
 const Header = ({ children }) => (
-  <Text style={{ fontSize: 25, paddingHorizontal: 20, fontWeight: 'bold' }}>{children}</Text>
+  <Text style={{ fontSize: 16, paddingHorizontal: 30, fontWeight: 'bold' }}>{children}</Text>
 )
 
 const mapStateToProps = state => {
@@ -499,7 +465,7 @@ export default connect(mapStateToProps)(FrontShopScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white
+    backgroundColor: colors.greyLighten4
   },
   description: {
     marginTop: 5,

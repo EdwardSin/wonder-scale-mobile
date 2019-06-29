@@ -1,11 +1,11 @@
 import colors from 'assets/variables/colors';
-import WsStatusBar from 'components/modals/WsStatusBar';
 import { EmptyList, LoadingSpinner, Title, WsRefreshControl } from 'components/modals/ws-modals';
+import WsStatusBar from 'components/modals/WsStatusBar';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Divider } from 'react-native-elements';
 import { connect } from 'react-redux';
-import { getRecruitmentByShopId } from 'services/recruitment';
+import { getRecruitmentByShopId } from 'services/http/public/recruitment';
 
 
 const RecruitmentCard = ({ index, item, onPress }) => (

@@ -1,10 +1,12 @@
 import { combineReducers } from 'redux';
 import itemReducer from './item.reducer';
 import mapReducer from './map.reducer';
+import searchbarReducer from './searchbar.reducer';
 import shopReducer from './shop.reducer';
 import toastReducer from './toast.reducer';
 import userReducer from './user.reducer';
 import voucherReducer from './voucher.reducer';
+
 
 const allReducers = combineReducers({
     mapReducer: mapReducer,
@@ -12,7 +14,8 @@ const allReducers = combineReducers({
     shopReducer: shopReducer,
     toastReducer: toastReducer,
     userReducer: userReducer,
-    itemReducer: itemReducer
+    itemReducer: itemReducer,
+    searchbarReducer: searchbarReducer
 })
 
 export default allReducers;

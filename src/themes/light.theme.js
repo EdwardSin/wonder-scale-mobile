@@ -1,9 +1,9 @@
 import colors from "assets/variables/colors";
 
-export class LightTheme{
+export class LightTheme {
     textColor = colors.secondary;
-    textBackgroundColor = colors.greyLighten3;
-    imageColor = colors.white;
-    imageBackgroundColor = colors.grey;
+    textBackgroundColor = colors.greyLighten4;
+    imageColor = colors.secondary;
+    imageBackgroundColor = colors.white;
     backgroundColor = colors.white;
 }

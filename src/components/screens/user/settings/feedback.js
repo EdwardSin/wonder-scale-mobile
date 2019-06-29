@@ -7,7 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { sendEmail } from 'services/feature';
+import { sendEmail } from 'services/http/public/feature';
 
 class FeedbackScreen extends React.Component {
     constructor(props) {
@@ -34,13 +34,13 @@ class FeedbackScreen extends React.Component {
         return (
             <View style={styles.container} >
                 <LoadingScreen loading={this.state.loading} title={'Loading...'} onRequestClose={this.onRequestClose} />
-                <Title style={{ paddingHorizontal: 20}}>Give us feedback</Title>
-                <KeyboardAwareScrollView  style={{flex: 1, paddingHorizontal: 20}} extraHeight={75} >
-                    <WsTextInput title={''} textInput={{ value: this.state.name, onChangeText: this.onNameChanged, placeholder: 'Enter your name' }} />
-                    <WsTextInput title={''} textInput={{ value: this.state.email, onChangeText: this.onEmailChanged, keyboardType: 'email-address', placeholder: 'Enter your email' }} />
-                    <WsTextInput title={''} textInput={{ value: this.state.tel, onChangeText: this.onTelChanged, placeholder: 'Enter your tel' }} />
-                    <WsPicker label={'Select Country'} onValueChange={ this.onCountryChanged} value={this.state.country} items={this.state.items} />
-                    <WsTextInput title={''} textInput={{ value: this.state.comment, onChangeText: this.onCommentChanged, multiline: true, placeholder: 'Enter your comment' }} />
+                <Title style={{ paddingHorizontal: 20 }}>Give us feedback</Title>
+                <KeyboardAwareScrollView style={{ flex: 1, paddingHorizontal: 20 }} extraHeight={75} >
+                    <WsTextInput placeholder={'Enter your name'} onChangeText={this.onNameChanged} value={this.state.name} />
+                    <WsTextInput placeholder={'Enter your email'} value={this.state.email} onChangeText={this.onEmailChanged} keyboardType={'email-address'} />
+                    <WsTextInput placeholder={'Enter your tel'} value={this.state.tel} onChangeText={this.onTelChanged} />
+                    <WsPicker style={{ marginBottom: 10 }} label={'Select Country'} onValueChange={this.onCountryChanged} value={this.state.country} items={this.state.items} />
+                    <WsTextInput placeholder={'Enter your comment'} value={this.state.comment} onChangeText={this.onCommentChanged} multiline={true} />
                 </KeyboardAwareScrollView>
             </View>);
     }
@@ -68,22 +68,22 @@ class FeedbackScreen extends React.Component {
             country: this.state.country,
             comment: this.state.comment
         }
-        this.setState({loading: true});
+        this.setState({ loading: true });
         if (this.isValidated(obj)) {
             sendEmail(obj, (result) => {
-                this.setState({callbackMessage: result['message']});
-                if(result['success']){
+                this.setState({ callbackMessage: result['message'] });
+                if (result['success']) {
                     this.resetForm();
                     this.props.navigation.goBack(null);
                 }
-                this.setState({loading: false});
+                this.setState({ loading: false });
             })
         }
-        else{
-            this.setState({loading: false});
+        else {
+            this.setState({ loading: false });
         }
     }
-    resetForm = () =>{
+    resetForm = () => {
         this.setState({
             name: '',
             email: '',
@@ -131,7 +131,7 @@ class FeedbackScreen extends React.Component {
 
 const mapStateToProps = state => {
     return {
-        
+
     }
 }
 

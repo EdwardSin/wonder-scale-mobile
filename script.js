@@ -1,5 +1,5 @@
-let _ = require('lodash');
-let favoriteShops = ["5c3323112a909b510c235e05"];
-let shop_id = "5c3323112a909b510c235e05";
+let value = [1, 2, 3, 4, 5, 6];
+value.unshift(6);
+value = value.slice(0, 5);
 
-console.log(_.includes(favoriteShops, shop_id));
+console.log(value);

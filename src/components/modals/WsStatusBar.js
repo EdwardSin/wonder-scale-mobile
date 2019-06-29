@@ -1,14 +1,23 @@
+import colors from 'assets/variables/colors';
 import { Constants } from 'expo';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import colors from 'assets/variables/colors';
 
-const WsStatusBar = () => (
-    <View style={styles.statusbar}></View>
-);
+
+
+
+class WsStatusBar extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+    render() {
+        return <View {...this.props} style={[styles.statusbar, this.props.style]}></View>
+    }
+}
 const styles = StyleSheet.create({
     statusbar: {
-        height: Constants.statusBarHeight
+        height: Constants.statusBarHeight,
+        backgroundColor: colors.secondary
     }
 });
 export default WsStatusBar;

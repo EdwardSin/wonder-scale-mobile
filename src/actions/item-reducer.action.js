@@ -4,12 +4,12 @@ export const refreshItem = isRefresh => {
         payload: isRefresh
     }
 }
-export const doneRefreshItem = items => {
-    return {
-        type: 'doneRefreshItem',
-        payload: items
-    }
-}
+// export const doneRefreshItem = items => {
+//     return {
+//         type: 'doneRefreshItem',
+//         payload: items
+//     }
+// }
 export const scrollToItem = item => {
     return {
         type: 'scrollToItem',

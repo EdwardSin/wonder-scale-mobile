@@ -6,8 +6,8 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { changePassword } from 'services/auth-user/auth-user';
-import PasswordValidator from '../../../validators/password';
+import { changePassword } from 'services/http/auth-user/auth-user';
+import PasswordValidator from '../../../../validators/password';
 
 class SecurityScreen extends React.Component {
     constructor(props) {
@@ -29,14 +29,12 @@ class SecurityScreen extends React.Component {
         return (
             this.state.loading ? <LoadingScreen loading={this.state.loading} title={'Loading...'} /> : (<View style={styles.container}>
                 {this.state.editLoading && <LoadingScreen loading={this.state.editLoading} title={'Editing...'} />}
-                <Title style={{paddingHorizontal: 20}}>Edit Password</Title>
+                <Title style={{ paddingHorizontal: 20 }}>Edit Password</Title>
                 <ScrollView style={{ paddingHorizontal: 20, marginBottom: 50 }}>
                     {this.state.isPassword && <WsTextInput style={{ marginBottom: 20 }} title={'Old Password'}
                         textInput={{ onChangeText: this.onOldPasswordChanged, secureTextEntry: true, placeholder: 'Enter your old password', defaultValue: this.state.oldPassword }} />}
-                    <WsTextInput style={{ marginBottom: 20 }} title={'New Password'}
-                        textInput={{ onChangeText: this.onNewPasswordChanged, secureTextEntry: true, placeholder: 'Enter your new password', defaultValue: this.state.newPassword }}  />
-                    <WsTextInput style={{ marginBottom: 20 }} title={'Confirm New Password'}
-                        textInput={{ onChangeText: this.onConfirmNewPasswordChanged, secureTextEntry: true, placeholder: 'Enter your confirmation password', defaultValue: this.state.confirmNewPassword }}  />
+                    <WsTextInput style={{ marginBottom: 20 }} onChangeText={this.onNewPasswordChanged} secureTextEntry={true} placeholder={'Enter your new password'} defaultValue={this.state.newPassword} />
+                    <WsTextInput style={{ marginBottom: 20 }} onChangeText={this.onConfirmNewPasswordChanged} secureTextEntry={true} placeholder={'Enter your confirmation password'} defaultValue={this.state.confirmNewPassword} />
                 </ScrollView>
             </View>)
         );
@@ -59,21 +57,21 @@ class SecurityScreen extends React.Component {
             confirm_password: this.state.confirmNewPassword
         }
         if (this.isValidated(obj)) {
-            this.setState({editLoading: true});
+            this.setState({ editLoading: true });
             changePassword(obj, () => {
-                this.setState({editLoading: false}, () => {
+                this.setState({ editLoading: false }, () => {
                     this.props.navigation.goBack();
                 });
             }, (error) => {
                 error = JSON.parse(error);
                 this.props.onToast(error.message);
-                this.setState({ editLoading: false});
+                this.setState({ editLoading: false });
             })
         }
     }
     // #endregion
-    getUser(){
-        this.setState({loading: true});
+    getUser() {
+        this.setState({ loading: true });
         let { user } = this.props;
         this.setState({
             loading: false,

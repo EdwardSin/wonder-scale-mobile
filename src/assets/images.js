@@ -1,7 +1,7 @@
 export default {
-    heart: require('' + './uploads/heart.svg'),
-    heartO: require('' +'./uploads/heart-o.svg'),
-    icon: require('' +'./icons/icon-72x72.png'),
-    loadingWhite: require('' + './uploads/loading-white.gif'),
-    mapMarker: require('' + './uploads/map-marker.png')
+    heart: require('' + './upload/heart.svg'),
+    heartO: require('' + './upload/heart-o.svg'),
+    icon: require('' + './icons/icon-72x72.png'),
+    loadingWhite: require('' + './upload/loading-white.gif'),
+    mapMarker: require('' + './upload/map-marker.png')
 };

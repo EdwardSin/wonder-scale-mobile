@@ -1,13 +1,17 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import colors from 'assets/variables/colors';
 import React from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default class WsSearchbar extends React.Component {
     constructor(props) {
         super(props);
     }
     render() {
-        return (<View style={[{ height: 30, flexDirection: 'row' }, this.props.containerStyle]}>
+        return (<View style={[{ height: 55, flexDirection: 'row', backgroundColor: colors.greyLighten3, borderRadius: 5 }, this.props.containerStyle]}>
+            <TouchableOpacity onPress={this.props.onPress} style={{ justifyContent: 'center', alignItems: 'center', width: 45 }}>
+                {this.props.icon == undefined ? <Ionicons name={'ios-search'} size={30} color={colors.greyDarken1} /> : this.props.icon}
+            </TouchableOpacity>
             <TextInput {...this.props} style={styles.textInput} />
         </View>)
     }
@@ -23,17 +27,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 0,
         flex: 1,
         paddingHorizontal: 0,
-        //backgroundColor: colors.secondary
-        backgroundColor: colors.white
-    },
-    searchBarInputContainer: {
-        backgroundColor: colors.greyDarken3
-        //backgroundColor: colors.white
-    },
-    searchBarInput: {
-        //color: colors.white,
-        //backgroundColor: colors.greyDarken3,
-        //backgroundColor: colors.white
-        marginHorizontal: 0
-    },
+        backgroundColor: colors.greyLighten3
+    }
 });

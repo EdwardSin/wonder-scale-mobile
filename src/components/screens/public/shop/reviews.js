@@ -2,15 +2,15 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as ToastAction from 'actions/toast-reducer.action';
 import colors from 'assets/variables/colors';
-import { EmptyList, LoadingSpinner, ReviewCard, Title, WsRefreshControl } from 'components/modals/ws-modals';
+import { EmptyList, LoadingSpinner, ReviewCard, Title, WsRefreshControl, WsStatusBar } from 'components/modals/ws-modals';
 import _ from 'lodash';
 import React from 'react';
 import { Dimensions, Keyboard, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import StarRating from 'react-native-star-rating';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
-import { addShopReview } from 'services/auth-user/review';
-import { getShopReviewById, getShopReviewRating } from 'services/review';
+import { addShopReview } from 'services/http/auth-user/review';
+import { getShopReviewById, getShopReviewRating } from 'services/http/public/review';
 const { width, height } = Dimensions.get('window');
 
 class PublicShopReview extends React.Component {
@@ -37,17 +37,19 @@ class PublicShopReview extends React.Component {
     return (
       loading ? <LoadingSpinner /> :
         (<View style={styles.container}>
+          <WsStatusBar />
           <View style={{ flexDirection: 'row' }}>
-            <Title style={{paddingLeft: 20, paddingRight: 10}}>Reviews</Title>
+            <Title style={{ paddingLeft: 20, paddingRight: 10 }}>Reviews</Title>
             <View style={{ alignItems: 'center', marginTop: 10, flexDirection: 'row' }}>
-              {_.times(rating, (i) => (<AntDesign style={{ width: 25 }} size={25} name={'star'} color={colors.main} />))}
-              {_.times(5 - rating, (i) => (<AntDesign style={{ width: 25 }} size={25} name={'staro'} color={colors.secondary} />))}
+              {_.times(rating, (i) => (<AntDesign key={i} style={{ width: 25 }} size={25} name={'star'} color={colors.main} />))}
+              {_.times(5 - rating, (i) => (<AntDesign key={i} style={{ width: 25 }} size={25} name={'staro'} color={colors.secondary} />))}
             </View>
-            {this.props.isSignedIn && <AddReviewButton onPress={() => { this.setState({ addReviewModalVisible: true }) }} />}
+            {/* {this.props.isSignedIn && <AddReviewButton onPress={() => { this.setState({ addReviewModalVisible: true }) }} />} */}
+            <AddReviewButton onPress={() => { this.setState({ addReviewModalVisible: true }) }} />
           </View>
           <ScrollView refreshControl={<WsRefreshControl refreshing={refreshing} onRefresh={this.handleRefresh.bind(this)} />}>
             {reviews.length > 0 ? reviews.map((review, index) =>
-              <ReviewCard isSignedIn={this.props.isSignedIn} navigation={this.props.navigation} item={review}
+              <ReviewCard key={index} isSignedIn={this.props.isSignedIn} navigation={this.props.navigation} item={review}
                 removeCallback={this.getShopReviewById} />
             ) : <EmptyList message={'No Review!'} />
             }
@@ -73,23 +75,23 @@ class PublicShopReview extends React.Component {
   }
   // #endregion
   renderAddReviewModal = () => (
-    <Modal visible={this.state.addReviewModalVisible} transparent animationType={'fade'}>
+    <Modal onRequestClose={() => { }} visible={this.state.addReviewModalVisible} transparent animationType={'fade'}>
       <TouchableOpacity activeOpacity={1} onPress={() => { Keyboard.dismiss() }}>
-        <View style={{ backgroundColor: 'rgba(0,0,0,.7)', width, height, justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ maxWidth: width, width: '90%', borderRadius: 10, backgroundColor: colors.greyLighten3 }}>
-            <View style={{ justifyContent: 'center', alignItems: 'center', paddingVertical: 20 }}>
-              <StarRating buttonStyle={{ paddingHorizontal: 5 }} starSize={35} fullStarColor={colors.main} rating={this.state.reviewRating} selectedStar={(value) => { this.setState({ reviewRating: value }) }} />
+        <View style={{ backgroundColor: 'rgba(0,0,0,.5)', width, height, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ maxWidth: 350, width: '80%', backgroundColor: colors.greyLighten4, shadowColor: 'rgba(0,0,0,.16)', padding: 10, shadowOpacity: 1, shadowOffset: { width: 0, height: 3 }, paddingTop: 20 }}>
+            <View style={{ justifyContent: 'center', alignItems: 'center', paddingBottom: 10 }}>
+              <StarRating buttonStyle={{ paddingHorizontal: 5 }} starSize={30} emptyStarColor={colors.secondary} fullStarColor={colors.gold} rating={this.state.reviewRating} selectedStar={(value) => { this.setState({ reviewRating: value }) }} />
             </View>
-            <ScrollView style={{ paddingHorizontal: 20 }}>
-              <TextInput style={{ height: 100, backgroundColor: colors.greyLighten3, borderRadius: 5, fontSize: 20, paddingHorizontal: 10 }}
-                multiline placeholder={'Comment'} onChangeText={(value) => { this.setState({ comment: value }) }} />
+            <ScrollView style={{ paddingHorizontal: 10, paddingVertical: 10 }}>
+              <TextInput style={{ height: 120, backgroundColor: colors.white, shadowColor: 'rgba(0,0,0,.16)', shadowOpacity: 1, shadowOffset: { width: 0, height: 3 }, fontSize: 20, paddingHorizontal: 10 }}
+                multiline placeholder={'Leave your comment...'} onChangeText={(value) => { this.setState({ comment: value }) }} />
             </ScrollView>
-            <View style={{ justifyContent: 'center', alignContent: 'center', flexDirection: 'row' }}>
-              <TouchableOpacity style={{ padding: 20 }} onPress={this.onReviewSubmit}>
-                <Text style={styles.linkButton}>Submit</Text>
+            <View style={{ justifyContent: 'center', alignContent: 'center', flexDirection: 'row', paddingVertical: 10 }}>
+              <TouchableOpacity style={{ paddingVertical: 10, paddingHorizontal: 20, justifyContent: 'center', shadowColor: 'rgba(0,0,0,.16)', shadowOpacity: 1, shadowOffset: { width: 0, height: 3 }, marginRight: 5, backgroundColor: colors.secondary }} onPress={this.onReviewSubmit}>
+                <Text style={{ color: colors.white }}>Submit</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={{ padding: 20 }} onPress={() => { this.setState({ addReviewModalVisible: false }) }}>
-                <Text style={styles.linkButton}>Close</Text>
+              <TouchableOpacity style={{ paddingVertical: 10, paddingHorizontal: 20, justifyContent: 'center', shadowColor: 'rgba(0,0,0,.16)', shadowOpacity: 1, shadowOffset: { width: 0, height: 3 }, marginLeft: 5, backgroundColor: colors.main }} onPress={() => { this.setState({ addReviewModalVisible: false }) }}>
+                <Text style={{ color: colors.white }}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -136,8 +138,7 @@ export default connect(mapStateToProps, mapDispatchToProps)(PublicShopReview);
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    paddingTop: 20
+    flex: 1
   },
   addReviewButton: {
     marginLeft: 'auto',

@@ -4,7 +4,7 @@ import { Header } from 'components/modals/ws-modals';
 import React from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ListItem } from 'react-native-elements';
-import { sendReportReview } from 'services/feature';
+import { sendReportReview } from 'services/http/public/feature';
 
 export default class ReportReviewScreen extends React.Component {
     constructor(props) {

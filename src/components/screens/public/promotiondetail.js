@@ -1,14 +1,14 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import colors from 'assets/variables/colors';
-import WsStatusBar from 'components/modals/WsStatusBar';
 import { BottomButton, LoadingSpinner } from 'components/modals/ws-modals';
+import WsStatusBar from 'components/modals/WsStatusBar';
 import environments from 'environments/environment';
 import moment from 'moment';
 import React from 'react';
 import { Animated, Dimensions, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Divider } from 'react-native-elements';
-import { claimVoucher } from 'services/auth-user/voucher';
-import { getPromotionById } from 'services/promotions';
+import { claimVoucher } from 'services/http/auth-user/voucher';
+import { getPromotionById } from 'services/http/public/promotions';
 
 const { height } = Dimensions.get('window');
 const Header = ({ label }) => (
@@ -54,7 +54,7 @@ export default class PromotionDetailScreen extends React.Component {
                             <Divider />
                             <Text style={{ fontSize: 15, paddingVertical: 20 }}>{promotion.description}</Text>
                             <Divider />
-                            {promotion.is_term_and_condition && promotion.term_and_condition.length > 0 && 
+                            {promotion.is_term_and_condition && promotion.term_and_condition.length > 0 &&
                                 <Text style={{ fontSize: 15, paddingVertical: 20 }} onPress={this.openModal}>Terms & Conditions</Text>}
                         </View>
                     </ScrollView>
@@ -64,7 +64,7 @@ export default class PromotionDetailScreen extends React.Component {
         );
     }
     renderPromotionModal = () => (
-        <Modal animationType={'slide'} visible={this.state.isTermsAndConditionsModalVisible}>
+        <Modal onRequestClose={() => { }} animationType={'slide'} visible={this.state.isTermsAndConditionsModalVisible}>
             <TouchableOpacity style={{ zIndex: 3, position: 'absolute', top: 30, right: 20 }} onPress={() => { this.setState({ isTermsAndConditionsModalVisible: false }) }} >
                 <Ionicons name={'ios-close-circle-outline'} size={35} color={colors.secondary} />
             </TouchableOpacity>
