@@ -190,7 +190,7 @@ class SearchMenuScreen extends React.Component {
     render() {
         return (
             <View style={styles.container}>
-                <WsStatusBar />
+                {/* <WsStatusBar /> */}
                 <View style={{ flex: 1, alignItems: 'center' }} >
                     {this.renderHeader()}
                     {this.renderContentPage()}
@@ -221,18 +221,41 @@ class SearchMenuScreen extends React.Component {
             }
         })
     }
+    
     getRandomShops(query) {
-        getRandomShops({ type: query }, (result) => {
-            if (query == 'service') {
-                this.setState({ serviceShops: result.result });
-            }
-            else if (query == 'restaurant') {
-                this.setState({ restaurants: result.result });
-            }
-            else if (query == 'shopping') {
-                this.setState({ shopping: result.result });
-            }
-        });
+        this.setState({ serviceShops: [{
+            _id: '1',
+            name: 'Random Shop Name',
+            profile_image: require('' + 'assets/immutable/craft-cafe.jpg')
+        }], restaurants: [{
+            _id: '1',
+            name: 'Random Shop Name',
+            profile_image: require('' + 'assets/immutable/img_not_available.png')
+        }],  shopping: [{
+            _id: '1',
+            name: 'Random Shop Name',
+            profile_image: require('' + 'assets/immutable/craft-cafe.jpg')
+        }]});
+        // getRandomShops({ type: query }, (result) => {
+        //     if (query == 'service') {
+        //         this.setState({ serviceShops: [{
+        //             _id: '1',
+        //             name: 'Random Shop Name'
+        //         }] });
+        //     }
+        //     else if (query == 'restaurant') {
+        //         this.setState({ restaurants: [{
+        //             _id: '1',
+        //             name: 'Random Shop Name'
+        //         }] });
+        //     }
+        //     else if (query == 'shopping') {
+        //         this.setState({ shopping: [{
+        //             _id: '1',
+        //             name: 'Random Shop Name'
+        //         }] });
+        //     }
+        // });
     }
     moveToMapCenterToCurrentPosition({ latitude, longitude }) {
         this.props.onCoordinatesChanged({

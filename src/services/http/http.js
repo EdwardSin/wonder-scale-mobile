@@ -16,7 +16,7 @@ export const http = {
         })
             .then(result => callback(result))
             .catch(err => {
-                errorCallback ? errorCallback(err) : alert(err)
+                errorCallback ? errorCallback(err) : ''
             });
     },
     getSync: (url, headers) => {
@@ -52,7 +52,7 @@ export const http = {
             }
         })
             .then(result => { callback(result) })
-            .catch(err => { errorCallback ? errorCallback(err) : alert(err) });
+            .catch(err => { errorCallback ? errorCallback(err) : '' });
     },
     postSync: (url, data, headers) => {
         return fetch(url, {
@@ -84,7 +84,7 @@ export const http = {
             }
         })
             .then(result => { callback(result) })
-            .catch(err => { errorCallback ? errorCallback(err) : alert(err) });
+            .catch(err => { errorCallback ? errorCallback(err) : '' });
     },
     putSync: (url, data, headers) => {
         return fetch(url, {

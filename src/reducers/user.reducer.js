@@ -1,7 +1,9 @@
 import _ from 'lodash';
 
 const INITIAL_DATA = {
-    user: undefined,
+    user: {
+        first_name: 'Edward'
+    },
     isSignedIn: false,
     favorite_items: [],
     favorite_shops: []

@@ -26,7 +26,8 @@ export default class WsPicker extends React.Component {
           width: '100%',
           backgroundColor: colors.greyLighten3,
           borderRadius: 5,
-          paddingVertical: 10
+          paddingVertical: 10,
+          marginBottom: 10
         }}
           customStyles={{
             valueInput: { borderWidth: 0 },

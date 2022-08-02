@@ -44,6 +44,7 @@ import { getAuthentication } from 'services/http/public/auth';
 let navigationOptions = { header: null };
 let navigationOptionsWithBack = {
   headerTintColor: colors.secondary,
+  containerStyle: { paddingTop: 0, height: 60 },
   headerLeftContainerStyle: {
     paddingVertical: 10,
     paddingLeft: 10
@@ -59,6 +60,7 @@ const createNavigator = () => {
         return {
           gesturesEnabled: false,
           header: (<Header
+            containerStyle={{ paddingTop: 0, height: 60 }}
             backgroundColor={colors.secondary}
             statusBarProps={{ barStyle: 'light-content' }}
             leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
@@ -75,6 +77,7 @@ const createNavigator = () => {
         return {
           title: 'Sign Up With Email',
           header: (<Header
+            containerStyle={{ paddingTop: 0, height: 60 }}
             backgroundColor={colors.secondary}
             statusBarProps={{ barStyle: 'light-content' }}
             leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
@@ -99,6 +102,7 @@ const createNavigator = () => {
         return {
           ...navigationOptionsWithBack,
           header: (<Header
+            containerStyle={{ paddingTop: 0, height: 60 }}
             backgroundColor={colors.secondary}
             statusBarProps={{ barStyle: 'light-content' }}
             leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}
@@ -167,6 +171,7 @@ const createNavigator = () => {
           ...navigationOptionsWithBack,
           title: 'Filter',
           header: (<Header
+            containerStyle={{ paddingTop: 0, height: 60 }}
             backgroundColor={colors.secondary}
             statusBarProps={{ barStyle: 'light-content' }}
             leftComponent={<Icon name='chevron-left' underlayColor='transparent' color='#fff' onPress={() => { navigation.goBack() }} />}

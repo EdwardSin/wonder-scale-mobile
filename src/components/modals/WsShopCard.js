@@ -27,12 +27,13 @@ class WsShopCard extends React.Component {
         return (
             <TouchableOpacity  {...this.props} activeOpacity={.8}
                 style={{
-                    width: 300, height: 225, marginHorizontal: 15, shadowOffset: { height: 1, width: 1 },
+                    width: 320, height: 225, marginHorizontal: 15, shadowOffset: { height: 1, width: 1 },
                     borderRadius: 5, shadowOpacity: 1, shadowColor: colors.greyLighten2,
                     borderWidth: 1, borderColor: colors.greyLighten2
                 }}>
                 <View style={{ flex: 1, backgroundColor: colors.white }}>
-                    <Image style={{ flex: 1 }} source={{ uri: shop.profile_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + shop.profile_image : shop.profile_image }} />
+                    <Image style={{ flex: 1, width: '100%' }} source={shop.profile_image} />
+                    {/* shop.profile_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + shop.profile_image : shop.profile_image */}
                     <Text style={{ alignSelf: 'center', paddingVertical: 5 }}>{shop.name}</Text>
                 </View>
                 <View style={{ borderBottomColor: '#eee', borderBottomWidth: 1, marginHorizontal: 10 }} />

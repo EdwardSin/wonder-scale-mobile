@@ -148,17 +148,18 @@ export default createMaterialBottomTabNavigator({
         <FontAwesome size={23} name={'user-o'} color={focused ? colors.gold : tintColor} />
       ),
       tabBarOnPress: ({ screen, jumpToIndex, defaultHandler }) => {
-        isSignedIn()
-          .then(res => {
-            if (res) {
-              defaultHandler();
-            }
-            else {
-              AsyncStorage.removeItem(AuthUser.WS_Token);
-              navigation.navigate('Login');
-            }
-          })
-          .catch(err => alert(err));
+        defaultHandler();
+        // isSignedIn()
+        //   .then(res => {
+        //     if (res) {
+        //       defaultHandler();
+        //     }
+        //     else {
+        //       AsyncStorage.removeItem(AuthUser.WS_Token);
+        //       navigation.navigate('Login');
+        //     }
+        //   })
+        //   .catch(err => alert(err));
       }
     })
   },

@@ -23,22 +23,32 @@ class SearchScreen extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      searchShopsByName: props.searchShopsByName,
-      searchShopsByItems: props.searchShopsByItems,
+      searchShopsByName: [{
+        _id: '1',
+        name: 'Random Shop Name',
+        dist: 10,
+        rating: 4,
+        location: {
+          coordinates: [3, 2]
+        },
+        profile_image: require('' + 'assets/immutable/craft-cafe.jpg')
+      }],
+      searchShopsByItems: [],
+      // props.searchShopsByItems,
       refreshing: false,
-      searchMoreLoading: true,
+      searchMoreLoading: false,
       hasMore: true,
-      searchTriggerState: true
+      searchTriggerState: false
     };
   }
   componentDidMount() {
 
   }
   componentWillUpdate(nextProps) {
-    let { currentLatitude, searchLatitude } = this.props.mapSetting;
-    if (searchLatitude == 0 && nextProps.mapSetting.searchLatitude > 0) {
-      this.setState({ searchTriggerState: true });
-    }
+    // let { currentLatitude, searchLatitude } = this.props.mapSetting;
+    // if (searchLatitude == 0 && nextProps.mapSetting.searchLatitude > 0) {
+    //   this.setState({ searchTriggerState: true });
+    // }
   }
   componentDidUpdate(prevProps) {
     let { searchShopsByItems, searchShopsByName, searchTrigger } = this.props;
@@ -46,11 +56,11 @@ class SearchScreen extends React.Component {
 
     if (searchTriggerState || searchTrigger) {
       this.setState({ searchShopsByItems: [], searchShopsByName: [] }, () => {
-        this.retrieveShopsBySearchName();
-        this.retrieveShopsBySearchItems();
-        this.stopLoading();
-        this.props.isSearchTriggered(false);
-        this.setState({ searchTriggerState: false });
+        // this.retrieveShopsBySearchName();
+        // this.retrieveShopsBySearchItems();
+        // this.stopLoading();
+        // this.props.isSearchTriggered(false);
+        // this.setState({ searchTriggerState: false });
       });
     }
     if (searchShopsByItems != prevProps.searchShopsByItems ||
@@ -107,14 +117,14 @@ class SearchScreen extends React.Component {
   renderShopCard = ({ item, index, section }) => {
     let shop = item;
     let isCurrentlyOpen = this.getOpeningInfo(shop);
-    let url = shop.profile_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + shop.profile_image : shop.profile_image;
+    // let url = shop.profile_image.indexOf('upload/') > -1 ? environments.IMAGE_URL + shop.profile_image : shop.profile_image;
     return (<View key={index} style={{ flexDirection: 'row', paddingVertical: 5, paddingHorizontal: 10 }}>
       <TouchableOpacity onPress={() => this.navigateToFrontShop(shop)} activeOpacity={.5} style={{ flexDirection: 'row', flex: 1 }}>
         <View style={{
           alignSelf: 'center', width: 80, height: 80, borderRadius: 40, backgroundColor: colors.white, zIndex: 10,
           shadowColor: colors.grey, shadowOpacity: 1, shadowOffset: { width: 1, height: 1 }
         }}>
-          <Image style={{ width: 80, height: 80, resizeMode: 'contain', overflow: 'hidden', borderRadius: 40 }} defaultSource={environments.Image.Default_Shop} source={{ uri: url }} />
+          <Image style={{ width: 80, height: 80, resizeMode: 'contain', overflow: 'hidden', borderRadius: 40 }} defaultSource={environments.Image.Default_Shop} source={shop.profile_image} />
         </View>
         <View style={{ height: 93, marginLeft: -15, flex: 1, flexDirection: 'row', backgroundColor: colors.greyLighten4, borderRadius: 10, overflow: 'hidden' }}>
           <View style={{ flex: 1, paddingRight: 15, paddingLeft: 25, justifyContent: 'center' }}>
@@ -177,7 +187,16 @@ class SearchScreen extends React.Component {
     let { searchKeyword, skip, limit, setResultParams } = this.props;
     let { searchLatitude, searchLongitude, radius } = this.props.mapSetting;
     this.setState({ searchMoreLoading: true });
-    let result = await getShopsBySearchItem({ query: searchKeyword, limit: 5, skip, lat: searchLatitude, lng: searchLongitude, radius }, { current_lat: searchLatitude, current_lng: searchLongitude });
+    // let result = await getShopsBySearchItem({ query: searchKeyword, limit: 5, skip, lat: searchLatitude, lng: searchLongitude, radius }, { current_lat: searchLatitude, current_lng: searchLongitude });
+    let result = {
+      result: [{
+          _id: '1',
+          name: 'Random Shop Name',
+          dist: 10,
+          rating: 3,
+          profile_image: require('' + 'assets/immutable/craft-cafe.jpg')
+      }]
+    }
     if (result.result && !result.result.length) {
       this.setState({ searchMoreLoading: false, hasMore: false });
       return;
@@ -189,7 +208,13 @@ class SearchScreen extends React.Component {
     let { searchLatitude, searchLongitude, radius } = this.props.mapSetting;
     let { searchKeyword } = this.props;
     this.setState({ searchMoreLoading: true });
-    let result = await getShopsBySearchText({ query: searchKeyword, limit: 3, lat: searchLatitude, lng: searchLongitude, radius });
+    // let result = await getShopsBySearchText({ query: searchKeyword, limit: 3, lat: searchLatitude, lng: searchLongitude, radius });
+    let result = {
+      result: [{
+      _id: '1',
+      name: 'Random Shop Name',
+      profile_image: require('' + 'assets/immutable/craft-cafe.jpg')
+    }]};
     this.setState({ searchShopsByName: result['result'] });
   }
   stopLoading() {

@@ -57,7 +57,7 @@ const ProfileContainer = ({ user, onPress }) => {
   return (
     <TouchableOpacity activeOpacity={.7} onPress={onPress}>
       <View style={styles.profileContainer}>
-        <Image style={styles.profileImage} defaultSource={require('' + '../../../../assets/upload/profile.png')} source={{ uri: user.profile_image }} />
+        <Image style={styles.profileImage} defaultSource={require('' + '../../../../assets/upload/profile.png')} source={require('' + 'assets/immutable/profile.png')} />
         <View style={{ justifyContent: 'center' }}>
           <Text style={{ fontSize: 30, textAlign: 'center' }}>{user.first_name}{'\n'}
             <Text style={{ fontSize: 15 }}>View and edit profile</Text>
