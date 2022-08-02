@@ -1,9 +1,10 @@
 {
   "expoServerNgrokUrl": "https://cq-2zu.edwardsin.wonder-scale-mobile.exp.direct",
   "packagerNgrokUrl": "https://packager.cq-2zu.edwardsin.wonder-scale-mobile.exp.direct",
-  "ngrokPid": 38248,
+  "ngrokPid": 21468,
   "devToolsPort": 19002,
   "expoServerPort": 19000,
   "packagerPort": 19001,
-  "packagerPid": 35588
+  "packagerPid": 35308,
+  "webpackServerPort": null
 }
