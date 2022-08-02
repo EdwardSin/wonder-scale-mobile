@@ -1,6 +1,6 @@
 # Wonder Scale Mobile
 A apps to display the information of the merchant's store. User can search the merchant and stores from the apps.
-(!)The App requires to function well with server.
+(!) The App requires to function well with server, server is not shared in public.
 
 # Screenshots:
 ### Login Page:
